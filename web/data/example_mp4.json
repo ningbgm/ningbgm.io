@@ -1,0 +1,456 @@
+{
+  "title": "Example Videos",
+  "description": "10 categories. Each category has 4 rows: video+audio+image+text, video+image+text, audio+image+text, and image+text.",
+  "categories": [
+    {
+      "id": "beauty",
+      "name": "Beauty & Fashion",
+      "orientation": "portrait",
+      "original": {
+        "video": "demo_io/demo_example/demo_original/beauty/beauty_06.mp4",
+        "image": "demo_io/demo_example/demo_original/beauty/beauty_06.jpg",
+        "audio": "demo_io/demo_example/demo_original/beauty/beauty_06.mp3",
+        "text": "Immersive makeup removal + skincare | A super soothing night routine—stay hydrated and glowy every day! #immersive #skincare #nightSkincare"
+      },
+      "rows": [
+        {
+          "type": "video_audio_image_text",
+          "label": "Video + Audio + Image + Text",
+          "output": {
+            "bgm": "demo_io/demo_example/demo_full_scene/beauty/bgm.mp4",
+            "vocal": "demo_io/demo_example/demo_full_scene/beauty/vocal.mp4"
+          }
+        },
+        {
+          "type": "video_image_text",
+          "label": "Video + Image + Text",
+          "output": {
+            "bgm": "demo_io/demo_example/demo_missing_audio/beauty/bgm.mp4",
+            "vocal": "demo_io/demo_example/demo_missing_audio/beauty/vocal.mp4"
+          }
+        },
+        {
+          "type": "audio_image_text",
+          "label": "Audio + Image + Text",
+          "output": {
+            "bgm": "demo_io/demo_example/demo_missing_video/beauty/bgm.mp4",
+            "vocal": "demo_io/demo_example/demo_missing_video/beauty/vocal.mp4"
+          }
+        },
+        {
+          "type": "image_text",
+          "label": "Image + Text",
+          "output": {
+            "bgm": "demo_io/demo_example/demo_missing_audio_video/beauty/bgm.mp4",
+            "vocal": "demo_io/demo_example/demo_missing_audio_video/beauty/vocal.mp4"
+          }
+        }
+      ]
+    },
+    {
+      "id": "car",
+      "name": "Automotive",
+      "orientation": "landscape",
+      "original": {
+        "video": "demo_io/demo_example/demo_original/car/car_01.mp4",
+        "image": "demo_io/demo_example/demo_original/car/car_01.jpg",
+        "audio": "demo_io/demo_example/demo_original/car/car_01.mp3",
+        "text": "People keep saying I dub things randomly—here’s the original audio. #AstonMartinVanquish #V12Sound #originalAudio #carPhotography #roar"
+      },
+      "rows": [
+        {
+          "type": "video_audio_image_text",
+          "label": "Video + Audio + Image + Text",
+          "output": {
+            "bgm": "demo_io/demo_example/demo_full_scene/car/bgm.mp4",
+            "vocal": "demo_io/demo_example/demo_full_scene/car/vocal.mp4"
+          }
+        },
+        {
+          "type": "video_image_text",
+          "label": "Video + Image + Text",
+          "output": {
+            "bgm": "demo_io/demo_example/demo_missing_audio/car/bgm.mp4",
+            "vocal": "demo_io/demo_example/demo_missing_audio/car/vocal.mp4"
+          }
+        },
+        {
+          "type": "audio_image_text",
+          "label": "Audio + Image + Text",
+          "output": {
+            "bgm": "demo_io/demo_example/demo_missing_video/car/bgm.mp4",
+            "vocal": "demo_io/demo_example/demo_missing_video/car/vocal.mp4"
+          }
+        },
+        {
+          "type": "image_text",
+          "label": "Image + Text",
+          "output": {
+            "bgm": "demo_io/demo_example/demo_missing_audio_video/car/bgm.mp4",
+            "vocal": "demo_io/demo_example/demo_missing_audio_video/car/vocal.mp4"
+          }
+        }
+      ]
+    },
+    {
+      "id": "food",
+      "name": "Food",
+      "orientation": "portrait",
+      "original": {
+        "video": "demo_io/demo_example/demo_original/food/food_02.mp4",
+        "image": "demo_io/demo_example/demo_original/food/food_02.jpg",
+        "audio": "demo_io/demo_example/demo_original/food/food_02.mp3",
+        "text": "Mango pomelo sago stir-fried yogurt #ASMR #stirFriedYogurt #solidMangoPomeloSago"
+      },
+      "rows": [
+        {
+          "type": "video_audio_image_text",
+          "label": "Video + Audio + Image + Text",
+          "output": {
+            "bgm": "demo_io/demo_example/demo_full_scene/food/bgm.mp4",
+            "vocal": "demo_io/demo_example/demo_full_scene/food/vocal.mp4"
+          }
+        },
+        {
+          "type": "video_image_text",
+          "label": "Video + Image + Text",
+          "output": {
+            "bgm": "demo_io/demo_example/demo_missing_audio/food/bgm.mp4",
+            "vocal": "demo_io/demo_example/demo_missing_audio/food/vocal.mp4"
+          }
+        },
+        {
+          "type": "audio_image_text",
+          "label": "Audio + Image + Text",
+          "output": {
+            "bgm": "demo_io/demo_example/demo_missing_video/food/bgm.mp4",
+            "vocal": "demo_io/demo_example/demo_missing_video/food/vocal.mp4"
+          }
+        },
+        {
+          "type": "image_text",
+          "label": "Image + Text",
+          "output": {
+            "bgm": "demo_io/demo_example/demo_missing_audio_video/food/bgm.mp4",
+            "vocal": "demo_io/demo_example/demo_missing_audio_video/food/vocal.mp4"
+          }
+        }
+      ]
+    },
+    {
+      "id": "knowledge",
+      "name": "Knowledge",
+      "orientation": "landscape",
+      "original": {
+        "video": "demo_io/demo_example/demo_original/knowledge/konwledge_11.mp4",
+        "image": "demo_io/demo_example/demo_original/knowledge/konwledge_11.jpg",
+        "audio": "demo_io/demo_example/demo_original/knowledge/konwledge_11.mp3",
+        "text": "Making sound visible: hearing can be deceiving—seeing is believing! A physics teacher cleverly uses light reflection and vibration to make sound visible. #bigScienceShow #physicsExperiment @GuilinChuangfangEducation #sciencePopularization #onSite #liveFootage"
+      },
+      "rows": [
+        {
+          "type": "video_audio_image_text",
+          "label": "Video + Audio + Image + Text",
+          "output": {
+            "bgm": "demo_io/demo_example/demo_full_scene/knowledge/bgm.mp4",
+            "vocal": "demo_io/demo_example/demo_full_scene/knowledge/vocal.mp4"
+          }
+        },
+        {
+          "type": "video_image_text",
+          "label": "Video + Image + Text",
+          "output": {
+            "bgm": "demo_io/demo_example/demo_missing_audio/knowledge/bgm.mp4",
+            "vocal": "demo_io/demo_example/demo_missing_audio/knowledge/vocal.mp4"
+          }
+        },
+        {
+          "type": "audio_image_text",
+          "label": "Audio + Image + Text",
+          "output": {
+            "bgm": "demo_io/demo_example/demo_missing_video/knowledge/bgm.mp4",
+            "vocal": "demo_io/demo_example/demo_missing_video/knowledge/vocal.mp4"
+          }
+        },
+        {
+          "type": "image_text",
+          "label": "Image + Text",
+          "output": {
+            "bgm": "demo_io/demo_example/demo_missing_audio_video/knowledge/bgm.mp4",
+            "vocal": "demo_io/demo_example/demo_missing_audio_video/knowledge/vocal.mp4"
+          }
+        }
+      ]
+    },
+    {
+      "id": "live",
+      "name": "Life",
+      "orientation": "landscape",
+      "original": {
+        "video": "demo_io/demo_example/demo_original/live/live_02.mp4",
+        "image": "demo_io/demo_example/demo_original/live/live_02.jpg",
+        "audio": "demo_io/demo_example/demo_original/live/live_02.mp3",
+        "text": "This is life—so different from what we imagine. It’s a movie, but we can’t hit pause, and we never know when it will end. #filmYourLife Today there’s no music—only the city’s own sound."
+      },
+      "rows": [
+        {
+          "type": "video_audio_image_text",
+          "label": "Video + Audio + Image + Text",
+          "output": {
+            "bgm": "demo_io/demo_example/demo_full_scene/live/bgm.mp4",
+            "vocal": "demo_io/demo_example/demo_full_scene/live/vocal.mp4"
+          }
+        },
+        {
+          "type": "audio_image_text",
+          "label": "Audio + Image + Text",
+          "output": {
+            "bgm": "demo_io/demo_example/demo_missing_video/live/bgm.mp4",
+            "vocal": "demo_io/demo_example/demo_missing_video/live/vocal.mp4"
+          }
+        },
+        {
+          "type": "video_image_text",
+          "label": "Video + Image + Text",
+          "output": {
+            "bgm": "demo_io/demo_example/demo_missing_audio/live/bgm.mp4",
+            "vocal": "demo_io/demo_example/demo_missing_audio/live/vocal.mp4"
+          }
+        },
+        {
+          "type": "image_text",
+          "label": "Image + Text",
+          "output": {
+            "bgm": "demo_io/demo_example/demo_missing_audio_video/live/bgm.mp4",
+            "vocal": "demo_io/demo_example/demo_missing_audio_video/live/vocal.mp4"
+          }
+        }
+      ]
+    },
+    {
+      "id": "pet",
+      "name": "Pets",
+      "orientation": "portrait",
+      "original": {
+        "video": "demo_io/demo_example/demo_original/pet/pet_14.mp4",
+        "image": "demo_io/demo_example/demo_original/pet/pet_14.jpg",
+        "audio": "demo_io/demo_example/demo_original/pet/pet_14.mp3",
+        "text": "My friend said the original audio doesn’t need even a minute of trimming ^o^ #cutestPug #cutePets #furBaby #confusingAnimalBehavior #petVlog"
+      },
+      "rows": [
+        {
+          "type": "video_audio_image_text",
+          "label": "Video + Audio + Image + Text",
+          "output": {
+            "bgm": "demo_io/demo_example/demo_full_scene/pet/bgm.mp4",
+            "vocal": "demo_io/demo_example/demo_full_scene/pet/vocal.mp4"
+          }
+        },
+        {
+          "type": "audio_image_text",
+          "label": "Audio + Image + Text",
+          "output": {
+            "bgm": "demo_io/demo_example/demo_missing_video/pet/bgm.mp4",
+            "vocal": "demo_io/demo_example/demo_missing_video/pet/vocal.mp4"
+          }
+        },
+        {
+          "type": "video_image_text",
+          "label": "Video + Image + Text",
+          "output": {
+            "bgm": "demo_io/demo_example/demo_missing_audio/pet/bgm.mp4",
+            "vocal": "demo_io/demo_example/demo_missing_audio/pet/vocal.mp4"
+          }
+        },
+        {
+          "type": "image_text",
+          "label": "Image + Text",
+          "output": {
+            "bgm": "demo_io/demo_example/demo_missing_audio_video/pet/bgm.mp4",
+            "vocal": "demo_io/demo_example/demo_missing_audio_video/pet/vocal.mp4"
+          }
+        }
+      ]
+    },
+    {
+      "id": "scene",
+      "name": "Scenery",
+      "orientation": "landscape",
+      "original": {
+        "video": "demo_io/demo_example/demo_original/scene/scene_17.mp4",
+        "image": "demo_io/demo_example/demo_original/scene/scene_17.jpg",
+        "audio": "demo_io/demo_example/demo_original/scene/scene_17.MP3",
+        "text": "When videos no longer have a viral BGM, my life feels like a movie 📷 When only the real ambient sound remains, I realize we’re not a stream of brainwashing viral shorts—we’re scenes from a feature-length life film. #everyFrameIsLove #cinematic #filmYourLife #aNewKindOfVlog #cityMemories"
+      },
+      "rows": [
+        {
+          "type": "video_audio_image_text",
+          "label": "Video + Audio + Image + Text",
+          "output": {
+            "bgm": "demo_io/demo_example/demo_full_scene/scene/bgm.mp4",
+            "vocal": "demo_io/demo_example/demo_full_scene/scene/vocal.mp4"
+          }
+        },
+        {
+          "type": "audio_image_text",
+          "label": "Audio + Image + Text",
+          "output": {
+            "bgm": "demo_io/demo_example/demo_missing_video/scene/bgm.mp4",
+            "vocal": "demo_io/demo_example/demo_missing_video/scene/vocal.mp4"
+          }
+        },
+        {
+          "type": "video_image_text",
+          "label": "Video + Image + Text",
+          "output": {
+            "bgm": "demo_io/demo_example/demo_missing_audio/scene/bgm.mp4",
+            "vocal": "demo_io/demo_example/demo_missing_audio/scene/vocal.mp4"
+          }
+        },
+        {
+          "type": "image_text",
+          "label": "Image + Text",
+          "output": {
+            "bgm": "demo_io/demo_example/demo_missing_audio_video/scene/bgm.mp4",
+            "vocal": "demo_io/demo_example/demo_missing_audio_video/scene/vocal.mp4"
+          }
+        }
+      ]
+    },
+    {
+      "id": "skill",
+      "name": "Skills",
+      "orientation": "portrait",
+      "original": {
+        "video": "demo_io/demo_example/demo_original/skill/skill_02.mp4",
+        "image": "demo_io/demo_example/demo_original/skill/skill_02.jpg",
+        "audio": "demo_io/demo_example/demo_original/skill/skill_02.MP3",
+        "text": "First-person downhill ride—pure original sound, no BGM. #MTBDownhill #travelWithAction3 #extremeSports #rideMix"
+      },
+      "rows": [
+        {
+          "type": "video_audio_image_text",
+          "label": "Video + Audio + Image + Text",
+          "output": {
+            "bgm": "demo_io/demo_example/demo_full_scene/skill/bgm.mp4",
+            "vocal": "demo_io/demo_example/demo_full_scene/skill/vocal.mp4"
+          }
+        },
+        {
+          "type": "audio_image_text",
+          "label": "Audio + Image + Text",
+          "output": {
+            "bgm": "demo_io/demo_example/demo_missing_video/skill/bgm.mp4",
+            "vocal": "demo_io/demo_example/demo_missing_video/skill/vocal.mp4"
+          }
+        },
+        {
+          "type": "video_image_text",
+          "label": "Video + Image + Text",
+          "output": {
+            "bgm": "demo_io/demo_example/demo_missing_audio/skill/bgm.mp4",
+            "vocal": "demo_io/demo_example/demo_missing_audio/skill/vocal.mp4"
+          }
+        },
+        {
+          "type": "image_text",
+          "label": "Image + Text",
+          "output": {
+            "bgm": "demo_io/demo_example/demo_missing_audio_video/skill/bgm.mp4",
+            "vocal": "demo_io/demo_example/demo_missing_audio_video/skill/vocal.mp4"
+          }
+        }
+      ]
+    },
+    {
+      "id": "sport",
+      "name": "Sports",
+      "orientation": "landscape",
+      "original": {
+        "video": "demo_io/demo_example/demo_original/sport/sport_02.mp4",
+        "image": "demo_io/demo_example/demo_original/sport/sport_02.jpg",
+        "audio": "demo_io/demo_example/demo_original/sport/sport_02.mp3",
+        "text": "Suguru Osako shares an original-audio running video—beautiful scenery, even better form! #eliteRunner #running #runningForm #Osako #runningTechnique"
+      },
+      "rows": [
+        {
+          "type": "video_audio_image_text",
+          "label": "Video + Audio + Image + Text",
+          "output": {
+            "bgm": "demo_io/demo_example/demo_full_scene/sport/bgm.mp4",
+            "vocal": "demo_io/demo_example/demo_full_scene/sport/vocal.mp4"
+          }
+        },
+        {
+          "type": "audio_image_text",
+          "label": "Audio + Image + Text",
+          "output": {
+            "bgm": "demo_io/demo_example/demo_missing_video/sport/bgm.mp4",
+            "vocal": "demo_io/demo_example/demo_missing_video/sport/vocal.mp4"
+          }
+        },
+        {
+          "type": "video_image_text",
+          "label": "Video + Image + Text",
+          "output": {
+            "bgm": "demo_io/demo_example/demo_missing_audio/sport/bgm.mp4",
+            "vocal": "demo_io/demo_example/demo_missing_audio/sport/vocal.mp4"
+          }
+        },
+        {
+          "type": "image_text",
+          "label": "Image + Text",
+          "output": {
+            "bgm": "demo_io/demo_example/demo_missing_audio_video/sport/bgm.mp4",
+            "vocal": "demo_io/demo_example/demo_missing_audio_video/sport/vocal.mp4"
+          }
+        }
+      ]
+    },
+    {
+      "id": "technology",
+      "name": "Technology",
+      "orientation": "landscape",
+      "original": {
+        "video": "demo_io/demo_example/demo_original/technology/technology_10.mp4",
+        "image": "demo_io/demo_example/demo_original/technology/technology_10.jpg",
+        "audio": "demo_io/demo_example/demo_original/technology/technology_10.MP3",
+        "text": "The Westlake Robotics “out-of-body avatar” system is one of the core concepts mentioned here. It may refer to a technical system that enables remote agency or a stand-in capability. Through some mechanism, the operator may have an avatar-like presence in a remote environment to perform specific tasks or interactions."
+      },
+      "rows": [
+        {
+          "type": "video_audio_image_text",
+          "label": "Video + Audio + Image + Text",
+          "output": {
+            "bgm": "demo_io/demo_example/demo_full_scene/technology/bgm.mp4",
+            "vocal": "demo_io/demo_example/demo_full_scene/technology/vocal.mp4"
+          }
+        },
+        {
+          "type": "audio_image_text",
+          "label": "Audio + Image + Text",
+          "output": {
+            "bgm": "demo_io/demo_example/demo_missing_video/technology/bgm.mp4",
+            "vocal": "demo_io/demo_example/demo_missing_video/technology/vocal.mp4"
+          }
+        },
+        {
+          "type": "video_image_text",
+          "label": "Video + Image + Text",
+          "output": {
+            "bgm": "demo_io/demo_example/demo_missing_audio/technology/bgm.mp4",
+            "vocal": "demo_io/demo_example/demo_missing_audio/technology/vocal.mp4"
+          }
+        },
+        {
+          "type": "image_text",
+          "label": "Image + Text",
+          "output": {
+            "bgm": "demo_io/demo_example/demo_missing_audio_video/technology/bgm.mp4",
+            "vocal": "demo_io/demo_example/demo_missing_audio_video/technology/vocal.mp4"
+          }
+        }
+      ]
+    }
+  ]
+}

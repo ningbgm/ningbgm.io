@@ -1,0 +1,577 @@
+/* styles.css - paper texture + ink tone */
+
+:root {
+  /* Paper tone: warm off-white */
+  --bg-body: #f5f0e8;
+  --bg-soft: #faf6f0;
+  /* Ink tone: deep brown / charcoal */
+  --text-main: #2c2419;
+  --text-muted: #6b5d4f;
+  --primary: #4a3f35;
+  --border-strong: #d4c9b8;
+  --radius-md: 10px;
+  /* Requirement 3/5: equal-area example cells; fallback sizes before measuring (9:16 portrait / 16:9 landscape) */
+  --example-portrait-width: 160px;
+  --example-portrait-height: 284px;
+  --example-landscape-width: 284px;
+  --example-landscape-height: 160px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: ui-serif, Georgia, "Times New Roman", Times, serif;
+  background: var(--bg-body);
+  color: var(--text-main);
+}
+
+.container {
+  width: min(1400px, 98%); /* Slightly wider to fit 8 columns */
+  margin: 0 auto;
+}
+
+/* Card blocks */
+.card {
+  padding: 14px 16px;
+  background: var(--bg-soft);
+  border: 1px solid rgba(212, 201, 184, 0.9);
+  border-radius: 12px;
+}
+
+.card-title {
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--primary);
+}
+
+/* Top bar and shared styles */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(250, 246, 240, 0.92);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border-strong);
+}
+.topbar-inner { display: flex; justify-content: space-between; padding: 10px 0; }
+.brand-title { font-weight: 700; font-size: 18px; }
+.topnav a { margin-left: 15px; text-decoration: none; color: var(--text-main); font-size: 14px; }
+
+.a4-wrap { margin: 20px auto; max-width: 100%; }
+.a4-page {
+  position: relative;
+  margin: 32px auto 40px;
+  width: 100%;
+  max-width: 100%;
+  padding: 24px 28px 28px;
+  background: #fffdf8;
+  border-radius: 16px;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(212, 201, 184, 0.9);
+}
+/* Requirement 2: Examples and comparison share the same width; do not narrow the content wrapper */
+.example-page-fullbleed { width: 100%; }
+#Examples.section,
+#videoGallery { width: 100%; max-width: none; }
+
+.section-head { margin-bottom: 20px; }
+.page-title { font-size: 24px; margin: 0; }
+.page-subtitle { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
+
+/* Avoid double "paper card" on pages that already contain inner paper blocks */
+#page-2.a4-page,
+#page-3.a4-page {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+/* Fullbleed page: no outer paper chrome */
+.a4-page.example-page-fullbleed {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+/* Video play state icon */
+.grid-video-wrap {
+  position: relative;
+  background: #000;
+  cursor: pointer;
+  overflow: hidden;
+  border-radius: 6px; /* Rounded corners soften dense layouts */
+  transform: translateZ(0); /* Fix Chrome flicker */
+}
+.grid-video-wrap video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover; /* Fill the box (no letterboxing) */
+}
+.grid-play-icon {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.1);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.grid-video-wrap:hover .grid-play-icon { opacity: 1; }
+.grid-play-icon::before {
+  content: "▶";
+  color: white;
+  font-size: 24px;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+.grid-play-icon.is-playing::before { content: "⏸"; }
+
+/* -------------------------------------------
+   New Example Grid System (video, image, audio, text, two Ours columns)
+------------------------------------------- */
+
+.category-title {
+  font-size: 18px;
+  color: var(--primary);
+  margin: 0 0 18px;
+  padding-left: 4px;
+  border-left: 3px solid var(--primary);
+  font-weight: 700;
+}
+
+/* Requirement 2: Examples and comparison share the same width; do not create a narrower wrapper.
+   Each category, the comparison section, and the first-page paper area are placed on separate "paper sheets". */
+.example-category,
+#tbCompare,
+.page-paper {
+  position: relative;
+  margin: 32px auto 40px;
+  width: 100%;
+  max-width: 100%;
+  padding: 24px 28px 28px;
+  background: #fffdf8;
+  border-radius: 16px;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(212, 201, 184, 0.9);
+}
+
+.example-category:first-of-type {
+  margin-top: 16px;
+}
+
+.category-title::after {
+  content: "";
+  display: block;
+  margin-top: 10px;
+  height: 1px;
+  background: rgba(0, 0, 0, 0.08);
+}
+
+/* Row layout: video, image, audio, text, plus two Ours columns */
+.example-header-row {
+  margin-bottom: 10px;
+}
+
+.example-header-row .example-row-cells {
+  justify-content: center;
+}
+
+.example-row {
+  margin-bottom: 14px;
+}
+
+.example-row-cells {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 2fr 1fr 1fr; /* input video, input image, audio, text, Ours BGM, Ours Vocal */
+  gap: 14px;
+  align-items: stretch;
+  width: 100%;
+  margin-left: 0;
+  margin-right: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* Equal area: landscape rows are short+wide, portrait rows are tall+narrow, matching the comparison cell area.
+   Use min-height; actual height is driven by each media element's aspect-ratio. */
+.example-row-cells.mode-landscape {
+  min-height: 180px;
+  /* Slightly narrower text column; column 1 matches columns 5/6 so each Ours video matches the input video size */
+  grid-template-columns: 1.7fr 1.7fr 1fr 1.6fr 1.7fr 1.7fr;
+}
+.example-row-cells.mode-portrait {
+  min-height: 320px;
+  /* In portrait, keep column 1 equal to columns 5/6 and narrow the text column */
+  grid-template-columns: 0.9fr 0.9fr 1fr 1.6fr 0.9fr 0.9fr;
+}
+.example-row-cells.mode-landscape .example-ours-wrapper,
+.example-row-cells.mode-portrait .example-ours-wrapper {
+  grid-column: span 2;
+}
+
+/* Header row: no fixed height; reuse column ratios */
+.example-header-row .example-row-cells.mode-landscape,
+.example-header-row .example-row-cells.mode-portrait {
+  height: auto;
+  min-height: 0;
+}
+
+/* Make media fill the grid cell */
+.example-media-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.example-media-cell .grid-video-wrap,
+.example-media-cell .grid-image-wrap,
+.example-media-cell .ex-placeholder {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+.example-media-cell .grid-video-wrap video,
+.example-media-cell .grid-image-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* In Examples rows: let video/image wrappers derive height from their aspect-ratio */
+.example-row .example-media-cell .grid-video-wrap,
+.example-row .example-media-cell .grid-image-wrap {
+  height: auto;
+}
+
+/* Examples data rows: height is driven by media cells (no fixed 200px) */
+.example-row .example-row-cells {
+  align-items: stretch;
+}
+
+/* Header row: no outer border, visually consistent with data rows */
+.example-header-row .example-row-cells {
+  padding: 10px 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+}
+
+.ex-header-cell {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+  padding: 10px 6px;
+  background: transparent;
+  border-radius: 4px;
+}
+
+/* Ours wrapper: BGM left, Vocal right, consistent gap */
+.example-ours-wrapper {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  align-items: start;
+}
+
+.example-row .example-ours-wrapper {
+  align-items: stretch;
+  min-height: 0;
+}
+
+.example-ours-wrapper .grid-video-wrap,
+.example-ours-wrapper .ex-placeholder {
+  min-width: 0;
+}
+
+.example-row .example-ours-wrapper .grid-video-wrap,
+.example-row .example-ours-wrapper .ex-placeholder {
+  min-height: 0;
+}
+
+/* Images: preserve aspect ratio (Examples controlled by CSS; elsewhere JS may set aspectRatio on load) */
+.grid-image-wrap {
+  position: relative;
+  background: var(--bg-soft);
+  overflow: hidden;
+  border-radius: 8px;
+  aspect-ratio: 16 / 9; /* Fallback before loading */
+  border: 1px solid var(--border-strong);
+}
+
+.grid-image-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* Audio: aligned to image sizing; Examples remove borders (see .example-row overrides below) */
+.grid-audio-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-soft);
+  border-radius: 8px;
+  padding: 10px;
+  aspect-ratio: 16 / 9;
+  border: 1px solid var(--border-strong);
+}
+
+.grid-audio-wrap audio {
+  width: 100%;
+  max-width: 100%;
+  height: 32px;
+}
+
+.audio-btn {
+  border: none;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--bg-soft);
+  color: var(--text-main);
+  font-size: 13px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.audio-btn:hover {
+  background: var(--border-strong);
+}
+.audio-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Text block: aligned with image sizing; Examples remove borders (see .example-row overrides below) */
+.grid-text-wrap {
+  display: flex;
+  align-items: flex-start;
+  padding: 14px;
+  background: var(--bg-soft);
+  border-radius: 8px;
+  min-height: 100px;
+  border: 1px solid var(--border-strong);
+}
+
+.grid-text-content {
+  font-size: 13px;
+  line-height: 1.75;
+  color: var(--text-main);
+  white-space: pre-wrap;
+  word-break: break-word;
+  width: 100%;
+}
+
+/* Requirement 1 & 3: Examples have no outer border; spacing separates sections.
+   Input video and input image keep equal visible pixel area and matching corner radius. */
+.example-row .grid-video-wrap,
+.example-row .grid-image-wrap,
+.example-row .ex-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.example-row .grid-video-wrap video,
+.example-row .grid-image-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+
+/* Borderless Examples: text/audio/placeholders float over the page background */
+.example-row .grid-text-wrap,
+.example-row .grid-audio-wrap,
+.example-row .ex-placeholder {
+  min-height: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+}
+.example-row .grid-text-wrap {
+  align-items: center;
+  justify-content: flex-start;
+}
+.example-row .grid-audio-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+.example-row .grid-audio-wrap audio {
+  display: none;
+}
+.example-row .grid-text-content {
+  text-align: left;
+}
+
+/* Placeholder (when content is missing); borderless styling overridden within .example-row .ex-placeholder */
+.ex-placeholder {
+  aspect-ratio: 16 / 9;
+  background: var(--bg-soft);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--text-muted);
+  font-size: 12px;
+  border: 1px dashed var(--border-strong);
+}
+.ex-placeholder-missing-modality .ex-placeholder-icon {
+  font-size: 18px;
+  opacity: 0.7;
+}
+.ex-placeholder-missing-modality .ex-placeholder-text {
+  font-size: 11px;
+  text-align: center;
+  padding: 0 8px;
+}
+
+/* Requirement 2: unify example media-cell visible sizes by orientation so input video and image have equal area */
+.example-category.landscape .example-media-cell .grid-video-wrap,
+.example-category.landscape .example-media-cell .grid-image-wrap,
+.example-category.landscape .example-media-cell .ex-placeholder {
+  aspect-ratio: 16 / 9;
+}
+
+.example-category.portrait .example-media-cell .grid-video-wrap,
+.example-category.portrait .example-media-cell .grid-image-wrap,
+.example-category.portrait .example-media-cell .ex-placeholder {
+  aspect-ratio: 9 / 16;
+}
+
+/* Responsive: keep column ratios on narrow screens */
+@media (max-width: 1400px) {
+  .example-row-cells:not(.mode-portrait):not(.mode-landscape) {
+    grid-template-columns: 1fr 1fr 1fr 1.5fr 1fr 1fr;
+  }
+  .example-row-cells.mode-landscape {
+    /* Keep ratios consistent: narrower text, each Ours video matches input video width */
+    grid-template-columns: 1.6fr 1.6fr 1fr 1.4fr 1.6fr 1.6fr;
+  }
+  .example-row-cells.mode-portrait {
+    grid-template-columns: 0.85fr 0.85fr 1fr 1.6fr 0.85fr 0.85fr;
+  }
+}
+
+@media (max-width: 1200px) {
+  .example-row-cells {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .example-header-row .example-row-cells {
+    display: grid;
+    white-space: normal;
+  }
+
+  .example-row-cells > * {
+    display: inline-block;
+    vertical-align: top;
+    width: 180px;
+    margin-right: 12px;
+  }
+
+  .grid-text-wrap {
+    width: 300px;
+  }
+
+  .example-ours-wrapper {
+    display: inline-grid;
+    grid-template-columns: 1fr 1fr;
+    width: 360px;
+  }
+}
+
+/* TB Comparison Matrix Styles (Existing) */
+.compare-grid-container {
+  display: grid;
+  gap: 15px;
+}
+.compare-grid-row {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), 1fr);
+  gap: 10px;
+  align-items: start; /* Each cell sizes by its own media ratio; avoid stretched letterboxing */
+}
+/* Comparison Results: keep original ratio; JS sets the true ratio on loadedmetadata */
+.compare-cell .grid-video-wrap {
+  aspect-ratio: 16 / 9; /* Fallback ratio */
+  background: var(--bg-body); /* Match page background in case of contain */
+}
+.compare-cell .grid-video-wrap video {
+  object-fit: contain; /* No letterboxing when ratios match */
+}
+.grid-label {
+  font-size: 12px;
+  text-align: center;
+  padding: 4px;
+  background: var(--bg-soft);
+  color: var(--text-muted);
+}
+.compare-cell.has-separator {
+  border-right: 1px dashed var(--border-strong);
+  padding-right: 8px;
+  margin-right: -4px;
+}
+
+/* Disclaimer page helpers */
+.disclaimer-center {
+  text-align: center;
+  line-height: 1.75;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+#page-4 .section-head {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+#page-4 .page-subtitle {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 70ch;
+}
+
+#page-4 .card + .card {
+  margin-top: 12px;
+}
+
+#page-4 .card-title {
+  text-align: center;
+}
+
+#page-4 .card .muted {
+  margin: 0;
+  line-height: 1.85;
+  text-align: left;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 78ch;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+#page-4 .card .muted a {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}

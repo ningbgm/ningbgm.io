@@ -103,14 +103,21 @@ body {
   cursor: pointer;
   overflow: hidden;
   border-radius: 6px; /* Rounded corners soften dense layouts */
-  transform: translateZ(0); /* Fix Chrome flicker */
 }
-.grid-video-wrap video {
+
+/* Lazy loading optimization: only create GPU layer when video is loaded */
+.lazy-video {
+  will-change: contents;
+}
+
+.lazy-video video {
   width: 100%;
   height: 100%;
   display: block;
   object-fit: cover; /* Fill the box (no letterboxing) */
+  transform: translateZ(0); /* Fix Chrome flicker only for loaded videos */
 }
+
 .grid-play-icon {
   position: absolute;
   inset: 0;
@@ -574,4 +581,424 @@ body {
 #page-4 .card .muted a {
   overflow-wrap: anywhere;
   word-break: break-word;
+}
+
+/* ============================================
+   Responsive Design - Mobile First Approach
+   ============================================ */
+
+/* Tablet breakpoint (768px - 1024px) */
+@media (max-width: 1024px) {
+  .container {
+    width: min(100%, 98%);
+  }
+
+  .topbar-inner {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .topnav a {
+    font-size: 13px;
+    margin-left: 10px;
+  }
+
+  /* A4 pages: reduce padding */
+  .a4-page {
+    padding: 16px 20px 20px;
+  }
+
+  .page-title {
+    font-size: 20px;
+  }
+
+  /* Hero section: stack on tablet */
+  .hero {
+    flex-direction: column;
+  }
+
+  .hero-left {
+    width: 100%;
+  }
+
+  .hero-right {
+    width: 100%;
+    max-width: 400px;
+    margin: 24px auto 0;
+  }
+
+  /* Comparison grid: reduce gap */
+  .compare-grid-container {
+    gap: 10px;
+  }
+
+  .compare-grid-row {
+    gap: 8px;
+  }
+
+  .grid-label {
+    font-size: 11px;
+    padding: 3px;
+  }
+
+  /* Examples: reduce gap */
+  .example-row-cells {
+    gap: 10px;
+  }
+
+  .category-title {
+    font-size: 16px;
+  }
+}
+
+/* Mobile breakpoint (below 768px) */
+@media (max-width: 768px) {
+  /* Topbar mobile styles */
+  .topbar {
+    position: relative;
+  }
+
+  .topbar-inner {
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 0;
+  }
+
+  .brand {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .topnav {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px 16px;
+    margin-top: 10px;
+    width: 100%;
+  }
+
+  .topnav a {
+    margin-left: 0;
+    font-size: 14px;
+    padding: 4px 8px;
+  }
+
+  /* Container adjustments */
+  .container {
+    width: 100%;
+    padding: 0 12px;
+  }
+
+  /* A4 pages: minimal padding */
+  .a4-page {
+    margin: 16px auto 24px;
+    padding: 12px 14px 16px;
+    border-radius: 12px;
+  }
+
+  /* Hero section */
+  .hero {
+    gap: 16px;
+  }
+
+  .h1 {
+    font-size: 18px;
+    line-height: 1.4;
+  }
+
+  .abstract p {
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  /* Comparison grid: horizontal scroll with fixed cell size */
+  .compare-grid-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 12px;
+  }
+
+  .compare-grid-row {
+    display: flex;
+    flex-direction: row;
+    min-width: max-content;
+    gap: 8px;
+  }
+
+  .compare-cell {
+    flex: 0 0 160px;
+    min-width: 160px;
+  }
+
+  .compare-cell .grid-video-wrap {
+    aspect-ratio: 16 / 9;
+    height: auto;
+  }
+
+  .grid-label {
+    font-size: 10px;
+    padding: 2px 4px;
+  }
+
+  .compare-cell.has-separator {
+    border-right: none;
+    padding-right: 0;
+    margin-right: 0;
+  }
+
+  /* Comparison section title */
+  #page-2 .section-head {
+    margin-bottom: 12px;
+  }
+
+  #page-2 .page-title {
+    font-size: 18px;
+  }
+
+  #page-2 .page-subtitle {
+    font-size: 12px;
+  }
+
+  /* Examples: mobile layout */
+  .example-category {
+    padding: 12px 10px;
+    margin: 16px auto 20px;
+  }
+
+  .example-category:first-of-type {
+    margin-top: 12px;
+  }
+
+  .category-title {
+    font-size: 15px;
+    margin-bottom: 12px;
+    padding-left: 8px;
+  }
+
+  /* Hide header row on mobile */
+  .example-header-row {
+    display: none;
+  }
+
+  .example-row {
+    margin-bottom: 12px;
+  }
+
+  /* Single column layout for examples on mobile */
+  .example-row-cells {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .example-row-cells > * {
+    width: 100%;
+    min-width: unset;
+    margin-right: 0;
+  }
+
+  .example-ours-wrapper {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .example-ours-wrapper > * {
+    flex: 1;
+  }
+
+  /* Media cells: maintain aspect ratio */
+  .example-media-cell {
+    aspect-ratio: 16 / 9;
+  }
+
+  .example-category.portrait .example-media-cell {
+    aspect-ratio: 9 / 16;
+  }
+
+  .example-row .grid-video-wrap,
+  .example-row .grid-image-wrap,
+  .example-row .ex-placeholder {
+    width: 100%;
+    height: 100%;
+    aspect-ratio: inherit;
+  }
+
+  /* Text and audio: adjust sizing */
+  .example-row .grid-text-wrap {
+    min-height: 80px;
+    padding: 10px;
+  }
+
+  .example-row .grid-text-content {
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .example-row .grid-audio-wrap {
+    height: 60px;
+    aspect-ratio: auto;
+  }
+
+  /* Page title adjustments */
+  .section-head {
+    margin-bottom: 14px;
+  }
+
+  .page-title {
+    font-size: 18px;
+  }
+
+  .page-subtitle {
+    font-size: 12px;
+  }
+
+  /* Card adjustments */
+  .card {
+    padding: 12px;
+  }
+
+  .card-title {
+    font-size: 14px;
+  }
+
+  /* Disclaimer page */
+  #page-4 .card .muted {
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .disclaimer-list {
+    font-size: 13px;
+  }
+}
+
+/* Small mobile (below 480px) */
+@media (max-width: 480px) {
+  /* Further reduce padding */
+  .a4-page {
+    padding: 10px 10px 14px;
+    margin: 12px auto 16px;
+  }
+
+  .h1 {
+    font-size: 15px;
+    line-height: 1.35;
+  }
+
+  .abstract p {
+    font-size: 12px;
+  }
+
+  /* Topbar */
+  .brand-title {
+    font-size: 16px;
+  }
+
+  .brand-subtitle {
+    font-size: 11px;
+  }
+
+  .topnav a {
+    font-size: 13px;
+    padding: 3px 6px;
+  }
+
+  /* Comparison: smaller cells */
+  .compare-cell {
+    flex: 0 0 140px;
+    min-width: 140px;
+  }
+
+  .grid-label {
+    font-size: 9px;
+  }
+
+  /* Examples */
+  .category-title {
+    font-size: 14px;
+  }
+
+  .example-row-cells {
+    gap: 6px;
+  }
+
+  .ex-placeholder-text {
+    font-size: 10px;
+  }
+
+  /* Section titles */
+  .page-title {
+    font-size: 16px;
+  }
+
+  .page-subtitle {
+    font-size: 11px;
+  }
+
+  /* Audio button */
+  .audio-btn {
+    font-size: 12px;
+    padding: 4px 10px;
+  }
+}
+
+/* Landscape mobile: adjust comparison grid */
+@media (max-width: 768px) and (orientation: landscape) {
+  .compare-cell {
+    flex: 0 0 180px;
+    min-width: 180px;
+  }
+
+  .example-row-cells {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .example-row-cells > * {
+    flex: 0 0 calc(50% - 4px);
+  }
+
+  .example-ours-wrapper {
+    flex: 0 0 100%;
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  /* Remove hover effects on touch devices */
+  .grid-video-wrap:hover .grid-play-icon {
+    opacity: 1;
+  }
+
+  .audio-btn:hover {
+    background: var(--bg-soft);
+  }
+
+  /* Larger touch targets */
+  .audio-btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .topnav a {
+    padding: 8px 12px;
+  }
+
+  /* Scrollbar styling for touch */
+  .compare-grid-container::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .compare-grid-container::-webkit-scrollbar-track {
+    background: var(--bg-soft);
+    border-radius: 3px;
+  }
+
+  .compare-grid-container::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border-radius: 3px;
+  }
 }

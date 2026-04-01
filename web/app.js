@@ -72,7 +72,8 @@ function resolveMediaSrc(src) {
 const allVideos = [];
 const allAudios = [];
 
-function mediaNode(src, label, isSimple = false, options = {}) {
+// --- Video lazy loading with IntersectionObserver ---
+function createVideoElement(src, options = {}) {
   const resolved = resolveMediaSrc(src);
   const video = el("video", {
     src: resolved,
@@ -80,23 +81,12 @@ function mediaNode(src, label, isSimple = false, options = {}) {
     playsinline: "",
     "webkit-playsinline": "",
     muted: "",
-    loop: "", // Looping makes demos smoother
+    loop: "",
   });
+  return video;
+}
 
-  const btnPlay = el("div", { class: "grid-play-icon" });
-  const wrapper = el("div", { class: "grid-video-wrap" }, [video, btnPlay]);
-
-  // In Comparison Results, sync container aspect ratio to avoid letterboxing
-  if (options.syncAspectRatio) {
-    video.addEventListener("loadedmetadata", () => {
-      if (video.videoWidth && video.videoHeight) {
-        wrapper.style.aspectRatio = `${video.videoWidth} / ${video.videoHeight}`;
-      }
-    });
-  }
-
-  allVideos.push(video);
-
+function setupVideoEvents(video, btnPlay, wrapper) {
   const updateIcon = () => {
     if (video.paused) {
       btnPlay.classList.add("is-paused");
@@ -117,10 +107,48 @@ function mediaNode(src, label, isSimple = false, options = {}) {
     if (willPlay) video.play().catch(() => {});
     else video.pause();
   });
+}
 
-  // Simple mode is used in Examples: no bottom label; show tooltip via title attribute
+// Lazy video wrapper: placeholder until intersection triggers video creation
+function mediaNode(src, label, isSimple = false, options = {}) {
+  const wrapper = el("div", { class: "grid-video-wrap lazy-video" });
+  const btnPlay = el("div", { class: "grid-play-icon is-paused" });
+  wrapper.appendChild(btnPlay);
+
+  // In Comparison Results, sync container aspect ratio to avoid letterboxing
+  if (options.syncAspectRatio) {
+    // Use wrapper itself for aspect ratio
+    wrapper.style.aspectRatio = "16 / 9";
+  }
+
+  // Lazy load: create video only when entering viewport
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        const video = createVideoElement(src, options);
+        wrapper.insertBefore(video, btnPlay);
+        wrapper.classList.add("loaded");
+        allVideos.push(video);
+
+        if (options.syncAspectRatio) {
+          video.addEventListener("loadedmetadata", () => {
+            if (video.videoWidth && video.videoHeight) {
+              wrapper.style.aspectRatio = `${video.videoWidth} / ${video.videoHeight}`;
+            }
+          });
+        }
+
+        setupVideoEvents(video, btnPlay, wrapper);
+        observer.unobserve(wrapper);
+      }
+    });
+  }, { threshold: 0.05, rootMargin: "100px" });
+
+  observer.observe(wrapper);
+
+  // Simple mode: no bottom label
   if (isSimple) {
-    wrapper.title = label; // Tooltip
+    wrapper.title = label;
     return wrapper;
   }
 
@@ -149,7 +177,7 @@ function renderCompareMatrix(container) {
       const path = getCompareVideoPath(model, caseId);
       const cell = el("div", { class: "compare-cell" });
       if (SEPARATOR_COL_INDICES.includes(index)) cell.classList.add("has-separator");
-      
+
       const label = MODEL_LABELS[model] || model;
       cell.appendChild(mediaNode(path, label, false, { syncAspectRatio: true }));
       rowDiv.appendChild(cell);
@@ -157,13 +185,18 @@ function renderCompareMatrix(container) {
     grid.appendChild(rowDiv);
   }
   container.appendChild(grid);
+
+  // Sync cell sizes after render
+  requestAnimationFrame(syncCompareCellSizeToCssVars);
 }
 
 // Requirement 3/5: write the first-cell size to CSS vars, and compute equal-area sizes for portrait/landscape
+// Also handles responsive breakpoints
 function syncCompareCellSizeToCssVars() {
   const tbEl = document.getElementById("tbCompare");
   const firstWrap = tbEl?.querySelector(".compare-cell .grid-video-wrap");
   if (!firstWrap) return;
+
   const rect = firstWrap.getBoundingClientRect();
   const w = rect.width;
   const h = rect.height;
@@ -171,16 +204,27 @@ function syncCompareCellSizeToCssVars() {
   root.style.setProperty("--compare-cell-width", `${w}px`);
   root.style.setProperty("--compare-cell-height", `${h}px`);
   const S = w * h;
-  root.style.setProperty("--example-cell-area", String(S));
-  const portraitW = Math.sqrt(S * 9 / 16);
-  const portraitH = Math.sqrt(S * 16 / 9);
-  const landscapeW = Math.sqrt(S * 16 / 9);
-  const landscapeH = Math.sqrt(S * 9 / 16);
-  root.style.setProperty("--example-portrait-width", `${portraitW}px`);
-  root.style.setProperty("--example-portrait-height", `${portraitH}px`);
-  root.style.setProperty("--example-landscape-width", `${landscapeW}px`);
-  root.style.setProperty("--example-landscape-height", `${landscapeH}px`);
+
+  // Only set cell area if valid (avoid 0 values on mobile)
+  if (S > 0) {
+    root.style.setProperty("--example-cell-area", String(S));
+    const portraitW = Math.sqrt(S * 9 / 16);
+    const portraitH = Math.sqrt(S * 16 / 9);
+    const landscapeW = Math.sqrt(S * 16 / 9);
+    const landscapeH = Math.sqrt(S * 9 / 16);
+    root.style.setProperty("--example-portrait-width", `${portraitW}px`);
+    root.style.setProperty("--example-portrait-height", `${portraitH}px`);
+    root.style.setProperty("--example-landscape-width", `${landscapeW}px`);
+    root.style.setProperty("--example-landscape-height", `${landscapeH}px`);
+  }
 }
+
+// Re-sync on resize (debounced)
+let resizeTimer;
+window.addEventListener("resize", () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(syncCompareCellSizeToCssVars, 250);
+});
 
 // --- Examples: new layout (video, image, audio, text, plus two Ours columns) ---
 

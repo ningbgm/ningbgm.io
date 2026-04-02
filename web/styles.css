@@ -53,6 +53,36 @@
   contain: layout style paint;
 }
 
+/* Video loading state */
+.lazy-video.loading {
+  background: linear-gradient(135deg, var(--bg-soft) 0%, var(--border-strong) 50%, var(--bg-soft) 100%);
+  background-size: 200% 200%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.lazy-video.loading::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 32px;
+  height: 32px;
+  margin: -16px 0 0 -16px;
+  border: 3px solid rgba(74, 63, 53, 0.2);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 .lazy-video.loaded {
   will-change: contents;
 }

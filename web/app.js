@@ -23,26 +23,26 @@ const SPECIAL_FILE_MAP = {
 // Performance Configuration
 // ============================================================
 const PERFORMANCE_CONFIG = {
-  // Video prefetch settings
-  maxPrefetchVideos: 6,
-  prefetchBatchSize: 2,
-  prefetchThrottleMs: 800,
-  prefetchTimeoutMs: 30000,
+  // Video prefetch settings - optimized for faster loading
+  maxPrefetchVideos: 8,
+  prefetchBatchSize: 4,
+  prefetchThrottleMs: 400,
+  prefetchTimeoutMs: 25000,
 
-  // IntersectionObserver settings
-  intersectionThreshold: 0.15,
-  intersectionRootMargin: "200px",
+  // IntersectionObserver settings - load videos earlier
+  intersectionThreshold: 0.1,
+  intersectionRootMargin: "300px",
 
   // Memory management
-  maxCachedVideos: 10,
-  maxCachedPosters: 30,
+  maxCachedVideos: 12,
+  maxCachedPosters: 40,
   cleanupIntervalMs: 60000,
 
   // Audio preload (auto = buffer audio for instant playback)
   audioPreload: "auto",
 
-  // Priority management
-  prioritizeVisibleCount: 2,
+  // Priority management - prioritize more visible videos
+  prioritizeVisibleCount: 3,
 };
 
 function getCompareBasePath() {
@@ -375,7 +375,9 @@ function enqueueAllVideosInOrder(visibleVideos = []) {
       if (video && video.src) {
         const resolved = video.src;
         if (!loadedVideoUrls.has(resolved) && !videoPrefetchQueue.find(q => q.src === resolved)) {
-          const priority = visibleVideos.includes(resolved) ? 2 : 1;
+          // Higher base priority + bonus for visible videos
+          const basePriority = 3;
+          const priority = visibleVideos.includes(resolved) ? basePriority + 5 : basePriority;
           toEnqueue.push({ src: resolved, priority });
         }
       }
@@ -412,9 +414,14 @@ function startMemoryCleanup() {
 function createVideoElement(src, options = {}) {
   const resolved = resolveMediaSrc(src);
   const posterSrc = getVideoPosterPath(resolved);
+
+  // Check if buffer pool has a ready video to reuse
+  const bufferReady = getBufferVideoReadyState(src);
+  const isReady = bufferReady >= 2;
+
   const video = el("video", {
     src: resolved,
-    preload: "none",
+    preload: isReady ? "auto" : "none",
     playsinline: "",
     "webkit-playsinline": "",
     muted: "",
@@ -422,16 +429,21 @@ function createVideoElement(src, options = {}) {
   });
 
   video._originalSrc = src;
-  video._isPreloaded = false;
+  video._isPreloaded = isReady;
 
-  const readyState = getBufferVideoReadyState(src);
-  if (readyState >= 2) {
-    video._isPreloaded = true;
-    video.preload = "auto";
+  // If buffer pool has ready state, sync it immediately
+  if (isReady && videoBufferPool.has(resolved)) {
+    const buffer = videoBufferPool.get(resolved);
+    video.readyState = buffer.readyState;
+
+    // Start playing silently in background for instant playback
+    if (buffer.video && buffer.video.readyState >= 3) {
+      video.readyState = buffer.video.readyState;
+    }
   }
 
-  if (posterSrc && posterPreloadCache.has(posterSrc)) {
-    const cached = posterPreloadCache.get(posterSrc);
+  if (posterSrc) {
+    const cached = posterPreloadCache.get(resolveMediaSrc(posterSrc));
     if (cached) video.poster = cached;
   }
 
@@ -488,7 +500,7 @@ function setupVideoEvents(video, btnPlay, wrapper, src) {
 }
 
 function mediaNode(src, label, isSimple = false, options = {}) {
-  const wrapper = el("div", { class: "grid-video-wrap lazy-video" });
+  const wrapper = el("div", { class: "grid-video-wrap lazy-video loading" });
   const btnPlay = el("div", { class: "grid-play-icon is-paused" });
   wrapper.appendChild(btnPlay);
 
@@ -499,6 +511,10 @@ function mediaNode(src, label, isSimple = false, options = {}) {
   const rect = wrapper.getBoundingClientRect();
   const isAboveFold = rect.top < window.innerHeight * 1.5;
 
+  // Preload poster first for immediate visual feedback
+  const posterSrc = getVideoPosterPath(resolveMediaSrc(src));
+  if (posterSrc) preloadPoster(posterSrc, null);
+
   const observer = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
       if (entry.isIntersecting) {
@@ -508,8 +524,21 @@ function mediaNode(src, label, isSimple = false, options = {}) {
         wrapper.classList.add("loaded");
         allVideos.push(video);
 
-        const posterSrc = getVideoPosterPath(resolved);
-        if (posterSrc) preloadPoster(posterSrc, video);
+        // Apply cached poster immediately if available
+        if (posterSrc) {
+          const cachedPoster = posterPreloadCache.get(resolveMediaSrc(posterSrc));
+          if (cachedPoster) {
+            video.poster = cachedPoster;
+            wrapper.classList.remove("loading");
+          }
+        }
+
+        // Remove loading state when poster loads or video starts
+        const onReady = () => {
+          wrapper.classList.remove("loading");
+        };
+        video.addEventListener("loadeddata", onReady, { once: true });
+        video.addEventListener("canplay", onReady, { once: true });
 
         if (options.syncAspectRatio) {
           video.addEventListener("loadedmetadata", () => {
@@ -522,7 +551,8 @@ function mediaNode(src, label, isSimple = false, options = {}) {
         setupVideoEvents(video, btnPlay, wrapper, src);
         observer.unobserve(wrapper);
 
-        enqueueVideoPrefetch(src, isAboveFold, isAboveFold ? 5 : 2);
+        // Higher priority for visible videos
+        enqueueVideoPrefetch(src, true, isAboveFold ? 8 : 2);
       }
     });
   }, {
@@ -531,11 +561,6 @@ function mediaNode(src, label, isSimple = false, options = {}) {
   });
 
   observer.observe(wrapper);
-
-  if (isAboveFold) {
-    const posterSrc = getVideoPosterPath(resolveMediaSrc(src));
-    if (posterSrc) preloadPoster(posterSrc, null);
-  }
 
   if (isSimple) {
     wrapper.title = label;

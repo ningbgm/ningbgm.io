@@ -72,16 +72,80 @@ function resolveMediaSrc(src) {
 const allVideos = [];
 const allAudios = [];
 
+// --- Poster preloader ---
+// Maps resolved video URL -> resolved poster URL (or null if failed)
+const posterPreloadCache = new Map();
+
+function getVideoPosterPath(src) {
+  return src.replace(/\.(mp4|MP4|mov|MOV|webm|WEBM)$/, ".jpg");
+}
+
+function preloadPoster(posterSrc, videoEl) {
+  const resolved = resolveMediaSrc(posterSrc);
+  if (posterPreloadCache.has(resolved)) {
+    const cached = posterPreloadCache.get(resolved);
+    if (cached && videoEl) videoEl.poster = cached;
+    return;
+  }
+  const img = new Image();
+  img.onload = () => {
+    posterPreloadCache.set(resolved, resolved);
+    if (videoEl) videoEl.poster = resolved;
+  };
+  img.onerror = () => {
+    posterPreloadCache.set(resolved, null);
+  };
+  img.src = resolved;
+}
+
+// --- Image preloader ---
+function preloadImages() {
+  document.querySelectorAll("img").forEach((img) => {
+    if (img.src && !img.complete) {
+      const src = img.src;
+      img.removeAttribute("src");
+      img.src = src;
+    }
+  });
+}
+
+// --- Collect all poster sources from JSON data and kick off poster preloads ---
+function collectAndPreloadPosters(categories) {
+  if (!categories) return;
+  categories.forEach((cat) => {
+    const orig = cat.original || {};
+    const paths = [
+      orig.video,
+      orig.image,
+    ];
+    (cat.rows || []).forEach((row) => {
+      if (row.output) {
+        if (row.output.bgm) paths.push(row.output.bgm);
+        if (row.output.vocal) paths.push(row.output.vocal);
+      }
+    });
+    paths.forEach((src) => {
+      if (!src) return;
+      const poster = getVideoPosterPath(src);
+      if (poster) preloadPoster(poster, null);
+    });
+  });
+}
+
 // --- Video prefetch queue ---
 const videoPrefetchQueue = [];
 const loadedVideoUrls = new Set();
 
-function enqueueVideoPrefetch(src) {
+function enqueueVideoPrefetch(src, immediate = false) {
   const resolved = resolveMediaSrc(src);
   if (loadedVideoUrls.has(resolved)) return;
   const existingIdx = videoPrefetchQueue.indexOf(resolved);
   if (existingIdx !== -1) videoPrefetchQueue.splice(existingIdx, 1);
-  videoPrefetchQueue.unshift(resolved);
+  if (immediate) {
+    videoPrefetchQueue.unshift(resolved);
+  } else {
+    videoPrefetchQueue.push(resolved);
+  }
   processPrefetchQueue();
 }
 
@@ -118,9 +182,10 @@ function processPrefetchQueue() {
   }, 30000);
 }
 
-// Collect all video srcs from the page for sequential prefetch after user clicks
+// Collect all video srcs from the page for sequential prefetch (excluding already queued/loaded)
 function enqueueAllVideosInOrder() {
   const containers = document.querySelectorAll(".compare-grid-container, #videoGallery");
+  const toEnqueue = [];
   containers.forEach((container) => {
     const videos = container.querySelectorAll(".grid-video-wrap");
     videos.forEach((wrap) => {
@@ -128,25 +193,35 @@ function enqueueAllVideosInOrder() {
       if (video && video.src) {
         const resolved = video.src;
         if (!loadedVideoUrls.has(resolved) && !videoPrefetchQueue.includes(resolved)) {
-          videoPrefetchQueue.push(resolved);
+          toEnqueue.push(resolved);
         }
       }
     });
   });
-  processPrefetchQueue();
+  // Add all found videos to the end of the queue
+  if (toEnqueue.length > 0) {
+    videoPrefetchQueue.push(...toEnqueue);
+    processPrefetchQueue();
+  }
 }
 
 // --- Video lazy loading with IntersectionObserver ---
 function createVideoElement(src, options = {}) {
   const resolved = resolveMediaSrc(src);
+  const posterSrc = getVideoPosterPath(resolved);
   const video = el("video", {
     src: resolved,
-    preload: "auto",
+    preload: "none", // do not load video content eagerly; wait for user interaction or prefetch
     playsinline: "",
     "webkit-playsinline": "",
     muted: "",
     loop: "",
   });
+  // Apply cached poster if already preloaded
+  if (posterSrc && posterPreloadCache.has(posterSrc)) {
+    const cached = posterPreloadCache.get(posterSrc);
+    if (cached) video.poster = cached;
+  }
   return video;
 }
 
@@ -170,8 +245,8 @@ function setupVideoEvents(video, btnPlay, wrapper, src) {
     allVideos.forEach((v) => { if (!v.paused) v.pause(); });
     if (willPlay) {
       video.play().catch(() => {});
-      // User clicked to play: prioritize this video, then prefetch all others in order
-      enqueueVideoPrefetch(src);
+      // User clicked to play: prioritize this video (immediate load), then queue all others
+      enqueueVideoPrefetch(src, true);
       enqueueAllVideosInOrder();
     } else {
       video.pause();
@@ -200,7 +275,10 @@ function mediaNode(src, label, isSimple = false, options = {}) {
         wrapper.insertBefore(video, btnPlay);
         wrapper.classList.add("loaded");
         allVideos.push(video);
-        loadedVideoUrls.add(resolved);
+
+        // Immediately kick off poster preload for this video
+        const posterSrc = getVideoPosterPath(resolved);
+        if (posterSrc) preloadPoster(posterSrc, video);
 
         if (options.syncAspectRatio) {
           video.addEventListener("loadedmetadata", () => {
@@ -239,6 +317,15 @@ function renderCompareMatrix(container) {
       el("p", { class: "page-subtitle", text: "Click a video to play/pause. Each column corresponds to a method." }),
     ]),
   );
+
+  // Kick off poster preloads for comparison videos before rendering
+  ROW_CASES.forEach((caseId) => {
+    COL_MODELS.forEach((model) => {
+      const path = getCompareVideoPath(model, caseId);
+      const poster = getVideoPosterPath(resolveMediaSrc(path));
+      if (poster) preloadPoster(poster, null);
+    });
+  });
 
   const grid = el("div", { class: "compare-grid-container" });
   grid.style.setProperty("--cols", String(COL_MODELS.length));
@@ -510,6 +597,9 @@ async function renderExampleGallery(container) {
         return weight(a) - weight(b);
       });
     
+    // Kick off poster preloads as early as possible (before rendering so network requests start)
+    collectAndPreloadPosters(categories);
+    
     // Render categories
     categories.forEach(category => {
       const categorySection = renderCategory(category);
@@ -524,6 +614,8 @@ async function renderExampleGallery(container) {
 
 // --- Init ---
 function init() {
+  // Preload all images immediately so they render without delay
+  preloadImages();
   const btn = document.getElementById("reloadBtn");
   if (btn) btn.addEventListener("click", () => renderAll());
   renderAll();

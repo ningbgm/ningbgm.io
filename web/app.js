@@ -19,6 +19,32 @@ const SPECIAL_FILE_MAP = {
   },
 };
 
+// ============================================================
+// Performance Configuration
+// ============================================================
+const PERFORMANCE_CONFIG = {
+  // Video prefetch settings
+  maxPrefetchVideos: 6,
+  prefetchBatchSize: 2,
+  prefetchThrottleMs: 800,
+  prefetchTimeoutMs: 30000,
+
+  // IntersectionObserver settings
+  intersectionThreshold: 0.15,
+  intersectionRootMargin: "200px",
+
+  // Memory management
+  maxCachedVideos: 10,
+  maxCachedPosters: 30,
+  cleanupIntervalMs: 60000,
+
+  // Audio preload (auto = buffer audio for instant playback)
+  audioPreload: "auto",
+
+  // Priority management
+  prioritizeVisibleCount: 2,
+};
+
 function getCompareBasePath() {
   const base = typeof document !== "undefined" && document.baseURI ? document.baseURI : "";
   const normalized = base.replace(/\/$/, "");
@@ -58,7 +84,6 @@ function setStatus(msg) {
 function resolveMediaSrc(src) {
   if (!src) return "";
   try {
-    // Compatibility for root and /web/: demo_io paths should resolve from site root
     const base = typeof document !== "undefined" && document.baseURI ? document.baseURI : "";
     const normalized = base.replace(/\/$/, "");
     const baseForDemo = normalized.endsWith("/web") ? new URL("../", base) : new URL(base);
@@ -69,12 +94,15 @@ function resolveMediaSrc(src) {
   }
 }
 
+// ============================================================
+// Performance State Management
+// ============================================================
 const allVideos = [];
 const allAudios = [];
 
-// --- Poster preloader ---
-// Maps resolved video URL -> resolved poster URL (or null if failed)
+// Poster cache with size limit
 const posterPreloadCache = new Map();
+const posterOrder = [];
 
 function getVideoPosterPath(src) {
   return src.replace(/\.(mp4|MP4|mov|MOV|webm|WEBM)$/, ".jpg");
@@ -84,12 +112,18 @@ function preloadPoster(posterSrc, videoEl) {
   const resolved = resolveMediaSrc(posterSrc);
   if (posterPreloadCache.has(resolved)) {
     const cached = posterPreloadCache.get(resolved);
-    if (cached && videoEl) videoEl.poster = cached;
+    if (cached && videoEl) {
+      videoEl.poster = cached;
+      updatePosterAccess(resolved);
+    }
     return;
   }
+
   const img = new Image();
   img.onload = () => {
     posterPreloadCache.set(resolved, resolved);
+    posterOrder.push(resolved);
+    evictOldPosters();
     if (videoEl) videoEl.poster = resolved;
   };
   img.onerror = () => {
@@ -98,130 +132,311 @@ function preloadPoster(posterSrc, videoEl) {
   img.src = resolved;
 }
 
-// --- Image preloader ---
+function updatePosterAccess(posterSrc) {
+  const idx = posterOrder.indexOf(posterSrc);
+  if (idx > -1) {
+    posterOrder.splice(idx, 1);
+    posterOrder.push(posterSrc);
+  }
+}
+
+function evictOldPosters() {
+  while (posterOrder.length > PERFORMANCE_CONFIG.maxCachedPosters) {
+    const oldest = posterOrder.shift();
+    posterPreloadCache.delete(oldest);
+  }
+}
+
+// ============================================================
+// Enhanced Image Preloader (avoid duplicate requests)
+// ============================================================
+const preloadedImages = new Set();
+
 function preloadImages() {
   document.querySelectorAll("img").forEach((img) => {
-    if (img.src && !img.complete) {
-      const src = img.src;
-      img.removeAttribute("src");
-      img.src = src;
+    if (!img.src) return;
+    if (preloadedImages.has(img.src)) return;
+    if (img.complete && img.naturalWidth > 0) return;
+
+    preloadedImages.add(img.src);
+    if (img.getAttribute("loading") !== "lazy") {
+      img.setAttribute("loading", "lazy");
     }
   });
 }
 
-// --- Collect all poster sources from JSON data and kick off poster preloads ---
-function collectAndPreloadPosters(categories) {
-  if (!categories) return;
-  categories.forEach((cat) => {
-    const orig = cat.original || {};
-    const paths = [
-      orig.video,
-      orig.image,
-    ];
-    (cat.rows || []).forEach((row) => {
-      if (row.output) {
-        if (row.output.bgm) paths.push(row.output.bgm);
-        if (row.output.vocal) paths.push(row.output.vocal);
-      }
-    });
-    paths.forEach((src) => {
-      if (!src) return;
-      const poster = getVideoPosterPath(src);
-      if (poster) preloadPoster(poster, null);
-    });
-  });
+// ============================================================
+// Video Buffer Pool Management
+// ============================================================
+const videoBufferPool = new Map();
+
+function createPrefetchContainer() {
+  let container = document.getElementById("video-prefetch-container");
+  if (container) return container;
+
+  container = el("div", { id: "video-prefetch-container" });
+  container.setAttribute("aria-hidden", "true");
+  document.body.appendChild(container);
+  return container;
 }
 
-// --- Video prefetch queue ---
+function getOrCreateBufferVideo(src) {
+  const resolved = resolveMediaSrc(src);
+
+  if (videoBufferPool.has(resolved)) {
+    const buffer = videoBufferPool.get(resolved);
+    if (buffer.readyState >= 3) {
+      buffer.lastUsed = Date.now();
+      buffer.refCount++;
+      return buffer.video;
+    }
+  }
+
+  const bufferVideo = el("video", {
+    src: resolved,
+    preload: "auto",
+    muted: "",
+    playsinline: "",
+  });
+
+  const buffer = {
+    video: bufferVideo,
+    lastUsed: Date.now(),
+    readyState: 0,
+    refCount: 1,
+  };
+
+  bufferVideo._bufferInfo = buffer;
+
+  bufferVideo.addEventListener("canplaythrough", () => {
+    buffer.readyState = bufferVideo.readyState;
+  });
+
+  bufferVideo.addEventListener("error", () => {
+    buffer.readyState = -1;
+    videoBufferPool.delete(resolved);
+  });
+
+  bufferVideo.addEventListener("loadedmetadata", () => {
+    buffer.readyState = 1;
+  });
+
+  bufferVideo.addEventListener("canplay", () => {
+    buffer.readyState = 2;
+  });
+
+  bufferVideo.addEventListener("canplaythrough", () => {
+    buffer.readyState = 3;
+  });
+
+  videoBufferPool.set(resolved, buffer);
+  evictOldBuffers();
+
+  return bufferVideo;
+}
+
+function evictOldBuffers() {
+  if (videoBufferPool.size <= PERFORMANCE_CONFIG.maxCachedVideos) return;
+
+  const entries = Array.from(videoBufferPool.entries())
+    .sort((a, b) => a[1].lastUsed - b[1].lastUsed);
+
+  const toRemove = entries.slice(0, videoBufferPool.size - PERFORMANCE_CONFIG.maxCachedVideos);
+
+  for (const [src, buffer] of toRemove) {
+    if (buffer.refCount <= 0) {
+      buffer.video.src = "";
+      buffer.video.load();
+      videoBufferPool.delete(src);
+    }
+  }
+}
+
+function releaseBufferVideo(src) {
+  const resolved = resolveMediaSrc(src);
+  if (videoBufferPool.has(resolved)) {
+    const buffer = videoBufferPool.get(resolved);
+    buffer.refCount--;
+    if (buffer.refCount <= 0) {
+      buffer.lastUsed = Date.now() - 30000;
+    }
+  }
+}
+
+function getBufferVideoReadyState(src) {
+  const resolved = resolveMediaSrc(src);
+  if (videoBufferPool.has(resolved)) {
+    return videoBufferPool.get(resolved).readyState;
+  }
+  return -1;
+}
+
+// ============================================================
+// Enhanced Video Prefetch Queue
+// ============================================================
 const videoPrefetchQueue = [];
 const loadedVideoUrls = new Set();
 
-function enqueueVideoPrefetch(src, immediate = false) {
+function enqueueVideoPrefetch(src, immediate = false, priority = 1) {
   const resolved = resolveMediaSrc(src);
   if (loadedVideoUrls.has(resolved)) return;
-  const existingIdx = videoPrefetchQueue.indexOf(resolved);
-  if (existingIdx !== -1) videoPrefetchQueue.splice(existingIdx, 1);
-  if (immediate) {
-    videoPrefetchQueue.unshift(resolved);
-  } else {
-    videoPrefetchQueue.push(resolved);
+  if (getBufferVideoReadyState(resolved) >= 3) return;
+
+  const existingIdx = videoPrefetchQueue.findIndex(item => item.src === resolved);
+  if (existingIdx !== -1) {
+    videoPrefetchQueue.splice(existingIdx, 1);
   }
-  processPrefetchQueue();
+
+  const queueItem = { src: resolved, priority, addedAt: Date.now() };
+
+  if (immediate) {
+    const insertIdx = videoPrefetchQueue.findIndex(item => item.priority < priority);
+    if (insertIdx === -1) {
+      videoPrefetchQueue.unshift(queueItem);
+    } else {
+      videoPrefetchQueue.splice(insertIdx, 0, queueItem);
+    }
+  } else {
+    videoPrefetchQueue.push(queueItem);
+    videoPrefetchQueue.sort((a, b) => b.priority - a.priority);
+  }
+
+  schedulePrefetch();
 }
 
 let prefetchRunning = false;
-function processPrefetchQueue() {
-  if (prefetchRunning || videoPrefetchQueue.length === 0) return;
-  prefetchRunning = true;
-  const src = videoPrefetchQueue.shift();
-  if (loadedVideoUrls.has(src)) {
-    prefetchRunning = false;
+let prefetchActiveCount = 0;
+let prefetchThrottleTimer = null;
+
+function schedulePrefetch() {
+  if (prefetchThrottleTimer) return;
+  prefetchThrottleTimer = setTimeout(() => {
+    prefetchThrottleTimer = null;
     processPrefetchQueue();
-    return;
-  }
-  const prefetchVideo = el("video", {
-    src,
-    preload: "auto",
-    muted: "",
-  });
-  prefetchVideo.addEventListener("canplaythrough", () => {
-    loadedVideoUrls.add(src);
-    prefetchVideo.src = "";
-    prefetchVideo.remove();
-    prefetchRunning = false;
-    processPrefetchQueue();
-  }, { once: true });
-  setTimeout(() => {
-    if (document.contains(prefetchVideo)) {
-      loadedVideoUrls.add(src);
-      prefetchVideo.src = "";
-      prefetchVideo.remove();
-    }
-    prefetchRunning = false;
-    processPrefetchQueue();
-  }, 30000);
+  }, 100);
 }
 
-// Collect all video srcs from the page for sequential prefetch (excluding already queued/loaded)
-function enqueueAllVideosInOrder() {
+function processPrefetchQueue() {
+  if (prefetchRunning) return;
+  if (videoPrefetchQueue.length === 0) return;
+  if (prefetchActiveCount >= PERFORMANCE_CONFIG.prefetchBatchSize) {
+    setTimeout(processPrefetchQueue, 500);
+    return;
+  }
+
+  prefetchRunning = true;
+  const batch = videoPrefetchQueue.splice(0, PERFORMANCE_CONFIG.prefetchBatchSize);
+  prefetchActiveCount += batch.length;
+
+  batch.forEach(item => {
+    if (loadedVideoUrls.has(item.src)) {
+      prefetchActiveCount--;
+      return;
+    }
+
+    const prefetchVideo = getOrCreateBufferVideo(item.src);
+    const container = createPrefetchContainer();
+    container.appendChild(prefetchVideo);
+
+    const onComplete = () => {
+      prefetchActiveCount--;
+      loadedVideoUrls.add(item.src);
+      cleanupVideoElement(prefetchVideo, container);
+      prefetchRunning = false;
+      schedulePrefetch();
+    };
+
+    prefetchVideo.addEventListener("canplaythrough", onComplete, { once: true });
+    prefetchVideo.addEventListener("error", onComplete, { once: true });
+
+    setTimeout(() => {
+      if (loadedVideoUrls.has(item.src)) return;
+      onComplete();
+    }, PERFORMANCE_CONFIG.prefetchTimeoutMs);
+  });
+}
+
+function cleanupVideoElement(video, container) {
+  if (video.parentNode === container) {
+    container.removeChild(video);
+  }
+  video.src = "";
+  video.load();
+}
+
+function enqueueAllVideosInOrder(visibleVideos = []) {
   const containers = document.querySelectorAll(".compare-grid-container, #videoGallery");
   const toEnqueue = [];
+
   containers.forEach((container) => {
     const videos = container.querySelectorAll(".grid-video-wrap");
     videos.forEach((wrap) => {
       const video = wrap.querySelector("video");
       if (video && video.src) {
         const resolved = video.src;
-        if (!loadedVideoUrls.has(resolved) && !videoPrefetchQueue.includes(resolved)) {
-          toEnqueue.push(resolved);
+        if (!loadedVideoUrls.has(resolved) && !videoPrefetchQueue.find(q => q.src === resolved)) {
+          const priority = visibleVideos.includes(resolved) ? 2 : 1;
+          toEnqueue.push({ src: resolved, priority });
         }
       }
     });
   });
-  // Add all found videos to the end of the queue
+
   if (toEnqueue.length > 0) {
-    videoPrefetchQueue.push(...toEnqueue);
-    processPrefetchQueue();
+    toEnqueue.forEach(item => {
+      if (!videoPrefetchQueue.find(q => q.src === item.src)) {
+        videoPrefetchQueue.push(item);
+      }
+    });
+    videoPrefetchQueue.sort((a, b) => b.priority - a.priority);
+    schedulePrefetch();
   }
 }
 
-// --- Video lazy loading with IntersectionObserver ---
+// ============================================================
+// Memory Cleanup Management
+// ============================================================
+let memoryCleanupTimer = null;
+
+function startMemoryCleanup() {
+  if (memoryCleanupTimer) return;
+  memoryCleanupTimer = setInterval(() => {
+    evictOldBuffers();
+    evictOldPosters();
+  }, PERFORMANCE_CONFIG.cleanupIntervalMs);
+}
+
+// ============================================================
+// Enhanced Video Lazy Loading
+// ============================================================
 function createVideoElement(src, options = {}) {
   const resolved = resolveMediaSrc(src);
   const posterSrc = getVideoPosterPath(resolved);
   const video = el("video", {
     src: resolved,
-    preload: "none", // do not load video content eagerly; wait for user interaction or prefetch
+    preload: "none",
     playsinline: "",
     "webkit-playsinline": "",
     muted: "",
     loop: "",
   });
-  // Apply cached poster if already preloaded
+
+  video._originalSrc = src;
+  video._isPreloaded = false;
+
+  const readyState = getBufferVideoReadyState(src);
+  if (readyState >= 2) {
+    video._isPreloaded = true;
+    video.preload = "auto";
+  }
+
   if (posterSrc && posterPreloadCache.has(posterSrc)) {
     const cached = posterPreloadCache.get(posterSrc);
     if (cached) video.poster = cached;
   }
+
+  video._releaseBuffer = () => releaseBufferVideo(src);
+
   return video;
 }
 
@@ -239,34 +454,51 @@ function setupVideoEvents(video, btnPlay, wrapper, src) {
 
   video.addEventListener("play", updateIcon);
   video.addEventListener("pause", updateIcon);
+  video.addEventListener("ended", updateIcon);
 
   wrapper.addEventListener("click", () => {
     const willPlay = video.paused;
-    allVideos.forEach((v) => { if (!v.paused) v.pause(); });
+
+    allVideos.forEach((v) => {
+      if (!v.paused) v.pause();
+    });
+
     if (willPlay) {
-      video.play().catch(() => {});
-      // User clicked to play: prioritize this video (immediate load), then queue all others
-      enqueueVideoPrefetch(src, true);
+      video.play().catch((e) => {
+        console.warn("Video play failed:", e);
+      });
+
+      enqueueVideoPrefetch(src, true, 10);
       enqueueAllVideosInOrder();
     } else {
       video.pause();
     }
   });
+
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      mutation.removedNodes.forEach((node) => {
+        if (node === video && video._releaseBuffer) {
+          video._releaseBuffer();
+        }
+      });
+    });
+  });
+  observer.observe(wrapper, { childList: true });
 }
 
-// Lazy video wrapper: placeholder until intersection triggers video creation
 function mediaNode(src, label, isSimple = false, options = {}) {
   const wrapper = el("div", { class: "grid-video-wrap lazy-video" });
   const btnPlay = el("div", { class: "grid-play-icon is-paused" });
   wrapper.appendChild(btnPlay);
 
-  // In Comparison Results, sync container aspect ratio to avoid letterboxing
   if (options.syncAspectRatio) {
-    // Use wrapper itself for aspect ratio
     wrapper.style.aspectRatio = "16 / 9";
   }
 
-  // Lazy load: create video only when entering viewport
+  const rect = wrapper.getBoundingClientRect();
+  const isAboveFold = rect.top < window.innerHeight * 1.5;
+
   const observer = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
       if (entry.isIntersecting) {
@@ -276,7 +508,6 @@ function mediaNode(src, label, isSimple = false, options = {}) {
         wrapper.classList.add("loaded");
         allVideos.push(video);
 
-        // Immediately kick off poster preload for this video
         const posterSrc = getVideoPosterPath(resolved);
         if (posterSrc) preloadPoster(posterSrc, video);
 
@@ -285,18 +516,27 @@ function mediaNode(src, label, isSimple = false, options = {}) {
             if (video.videoWidth && video.videoHeight) {
               wrapper.style.aspectRatio = `${video.videoWidth} / ${video.videoHeight}`;
             }
-          });
+          }, { once: true });
         }
 
         setupVideoEvents(video, btnPlay, wrapper, src);
         observer.unobserve(wrapper);
+
+        enqueueVideoPrefetch(src, isAboveFold, isAboveFold ? 5 : 2);
       }
     });
-  }, { threshold: 0.05, rootMargin: "100px" });
+  }, {
+    threshold: PERFORMANCE_CONFIG.intersectionThreshold,
+    rootMargin: PERFORMANCE_CONFIG.intersectionRootMargin,
+  });
 
   observer.observe(wrapper);
 
-  // Simple mode: no bottom label
+  if (isAboveFold) {
+    const posterSrc = getVideoPosterPath(resolveMediaSrc(src));
+    if (posterSrc) preloadPoster(posterSrc, null);
+  }
+
   if (isSimple) {
     wrapper.title = label;
     return wrapper;
@@ -306,6 +546,28 @@ function mediaNode(src, label, isSimple = false, options = {}) {
     wrapper,
     el("div", { class: "grid-label", text: label }),
   ]);
+}
+
+// ============================================================
+// Collect and Preload Posters
+// ============================================================
+function collectAndPreloadPosters(categories) {
+  if (!categories) return;
+  categories.forEach((cat) => {
+    const orig = cat.original || {};
+    const paths = [orig.video, orig.image];
+    (cat.rows || []).forEach((row) => {
+      if (row.output) {
+        if (row.output.bgm) paths.push(row.output.bgm);
+        if (row.output.vocal) paths.push(row.output.vocal);
+      }
+    });
+    paths.forEach((src) => {
+      if (!src) return;
+      const poster = getVideoPosterPath(src);
+      if (poster) preloadPoster(poster, null);
+    });
+  });
 }
 
 // --- Comparison grid ---
@@ -318,7 +580,6 @@ function renderCompareMatrix(container) {
     ]),
   );
 
-  // Kick off poster preloads for comparison videos before rendering
   ROW_CASES.forEach((caseId) => {
     COL_MODELS.forEach((model) => {
       const path = getCompareVideoPath(model, caseId);
@@ -345,12 +606,9 @@ function renderCompareMatrix(container) {
   }
   container.appendChild(grid);
 
-  // Sync cell sizes after render
   requestAnimationFrame(syncCompareCellSizeToCssVars);
 }
 
-// Requirement 3/5: write the first-cell size to CSS vars, and compute equal-area sizes for portrait/landscape
-// Also handles responsive breakpoints
 function syncCompareCellSizeToCssVars() {
   const tbEl = document.getElementById("tbCompare");
   const firstWrap = tbEl?.querySelector(".compare-cell .grid-video-wrap");
@@ -364,7 +622,6 @@ function syncCompareCellSizeToCssVars() {
   root.style.setProperty("--compare-cell-height", `${h}px`);
   const S = w * h;
 
-  // Only set cell area if valid (avoid 0 values on mobile)
   if (S > 0) {
     root.style.setProperty("--example-cell-area", String(S));
     const portraitW = Math.sqrt(S * 9 / 16);
@@ -378,7 +635,6 @@ function syncCompareCellSizeToCssVars() {
   }
 }
 
-// Re-sync on resize (debounced)
 let resizeTimer;
 window.addEventListener("resize", () => {
   clearTimeout(resizeTimer);
@@ -387,21 +643,17 @@ window.addEventListener("resize", () => {
 
 // --- Examples: new layout (video, image, audio, text, plus two Ours columns) ---
 
-// Display order (top to bottom):
-// full modalities (video, image, audio, text) → missing audio (video, image, text) → missing video (image, audio, text) → missing video+audio (image, text)
 const ROW_ORDER = ["video_audio_image_text", "video_image_text", "audio_image_text", "image_text"];
 
-// Create an image node.
-// Default: set wrapper aspect-ratio based on natural size; can be disabled via options.syncAspectRatio = false
 function imageNode(src, label, options = {}) {
   const resolved = resolveMediaSrc(src);
   const img = el("img", {
     src: resolved,
     alt: label || "",
-    loading: "eager",
+    loading: "lazy",
   });
   const wrapper = el("div", { class: "grid-image-wrap" }, [img]);
-  wrapper.title = label; // Tooltip
+  wrapper.title = label;
   const { syncAspectRatio = true } = options;
   if (syncAspectRatio) {
     img.addEventListener("load", () => {
@@ -413,16 +665,15 @@ function imageNode(src, label, options = {}) {
   return wrapper;
 }
 
-// Create an audio node
 function audioNode(src, label) {
   const resolved = resolveMediaSrc(src);
   const audio = el("audio", {
     src: resolved,
-    preload: "metadata",
+    preload: PERFORMANCE_CONFIG.audioPreload,
   });
   const btn = el("button", { class: "audio-btn", type: "button" });
   const wrapper = el("div", { class: "grid-audio-wrap" }, [btn, audio]);
-  wrapper.title = label; // Tooltip
+  wrapper.title = label;
 
   allAudios.push(audio);
 
@@ -444,14 +695,12 @@ function audioNode(src, label) {
   return wrapper;
 }
 
-// Create a text node
 function textNode(text) {
   return el("div", { class: "grid-text-wrap" }, [
     el("div", { class: "grid-text-content", text: text || "" })
   ]);
 }
 
-// Missing-modality placeholder: short label + minimal icon
 const PLACEHOLDER_LABELS = {
   video: "No video modality",
   image: "No image modality",
@@ -467,20 +716,17 @@ function placeholderNode(modality) {
   ]);
 }
 
-// Requirement 7: equal-area media cells within the same row
 function wrapMediaCell(content) {
   const cell = el("div", { class: "example-media-cell" });
   cell.appendChild(content);
   return cell;
 }
 
-// Render a row by type (orientation controls CSS sizing via mode-portrait/mode-landscape)
 function renderExampleRow(original, rowData, orientation = "landscape") {
   const row = el("div", { class: "example-row" });
   const cells = el("div", { class: `example-row-cells mode-${orientation}` });
 
   const type = rowData.type;
-  // In Examples, the visible size is controlled by CSS; do not sync wrapper aspect-ratio from metadata
   const mediaOpts = { syncAspectRatio: false };
 
   if (type === "video_audio_image_text") {
@@ -490,9 +736,7 @@ function renderExampleRow(original, rowData, orientation = "landscape") {
     if (original.image) cells.appendChild(wrapMediaCell(imageNode(original.image, "Input image", { syncAspectRatio: false })));
     else cells.appendChild(wrapMediaCell(placeholderNode("image")));
 
-    // Put audio into example-media-cell so the button centers and aligns with input video
     cells.appendChild(wrapMediaCell(audioNode(original.audio, "Input audio")));
-    // Put text into example-media-cell so the block centers (content still left-aligned)
     cells.appendChild(wrapMediaCell(textNode(original.text || "")));
   } else if (type === "audio_image_text") {
     cells.appendChild(wrapMediaCell(placeholderNode("video")));
@@ -538,16 +782,13 @@ function renderExampleRow(original, rowData, orientation = "landscape") {
   return row;
 }
 
-// Render a category section
 function renderCategory(category) {
   const orientation = category.orientation || "landscape";
   const categorySection = el("div", { class: `example-category ${orientation}` });
 
-  // Category title
   const categoryTitle = el("h3", { class: "category-title", text: category.name });
   categorySection.appendChild(categoryTitle);
-  
-  // Header row (same mode as data rows to keep columns aligned)
+
   const headerRow = el("div", { class: "example-header-row" });
   const headerCells = el("div", { class: `example-row-cells mode-${orientation}` });
   headerCells.appendChild(el("div", { class: "ex-header-cell", text: "Input video" }));
@@ -560,8 +801,7 @@ function renderCategory(category) {
   headerCells.appendChild(oursHeader);
   headerRow.appendChild(headerCells);
   categorySection.appendChild(headerRow);
-  
-  // Sort by fixed order and render rows
+
   const sortedRows = (category.rows || []).slice().sort(
     (a, b) => ROW_ORDER.indexOf(a.type) - ROW_ORDER.indexOf(b.type)
   );
@@ -569,7 +809,7 @@ function renderCategory(category) {
     const row = renderExampleRow(category.original, rowData, orientation);
     categorySection.appendChild(row);
   });
-  
+
   return categorySection;
 }
 
@@ -578,8 +818,7 @@ async function renderExampleGallery(container) {
   try {
     const resp = await fetch(EXAMPLE_MP4_URL);
     const data = await resp.json();
-    
-    // Top title
+
     container.appendChild(el("div", { class: "section-head" }, [
       el("h2", { class: "page-title", text: data.title || "Example Videos" }),
     ]));
@@ -587,20 +826,15 @@ async function renderExampleGallery(container) {
     const categories = (data.categories || [])
       .slice()
       .sort((a, b) => {
-        // Sorting rules:
-        // 1) Default: portrait first, landscape after
-        // 2) Special: id === "live" stays last
         const weight = (cat) => {
-          if (cat.id === "live") return 999; // force after all categories
+          if (cat.id === "live") return 999;
           return (cat.orientation || "landscape") === "portrait" ? 0 : 1;
         };
         return weight(a) - weight(b);
       });
-    
-    // Kick off poster preloads as early as possible (before rendering so network requests start)
+
     collectAndPreloadPosters(categories);
-    
-    // Render categories
+
     categories.forEach(category => {
       const categorySection = renderCategory(category);
       container.appendChild(categorySection);
@@ -614,8 +848,9 @@ async function renderExampleGallery(container) {
 
 // --- Init ---
 function init() {
-  // Preload all images immediately so they render without delay
   preloadImages();
+  startMemoryCleanup();
+
   const btn = document.getElementById("reloadBtn");
   if (btn) btn.addEventListener("click", () => renderAll());
   renderAll();

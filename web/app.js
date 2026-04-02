@@ -72,12 +72,76 @@ function resolveMediaSrc(src) {
 const allVideos = [];
 const allAudios = [];
 
+// --- Video prefetch queue ---
+const videoPrefetchQueue = [];
+const loadedVideoUrls = new Set();
+
+function enqueueVideoPrefetch(src) {
+  const resolved = resolveMediaSrc(src);
+  if (loadedVideoUrls.has(resolved)) return;
+  const existingIdx = videoPrefetchQueue.indexOf(resolved);
+  if (existingIdx !== -1) videoPrefetchQueue.splice(existingIdx, 1);
+  videoPrefetchQueue.unshift(resolved);
+  processPrefetchQueue();
+}
+
+let prefetchRunning = false;
+function processPrefetchQueue() {
+  if (prefetchRunning || videoPrefetchQueue.length === 0) return;
+  prefetchRunning = true;
+  const src = videoPrefetchQueue.shift();
+  if (loadedVideoUrls.has(src)) {
+    prefetchRunning = false;
+    processPrefetchQueue();
+    return;
+  }
+  const prefetchVideo = el("video", {
+    src,
+    preload: "auto",
+    muted: "",
+  });
+  prefetchVideo.addEventListener("canplaythrough", () => {
+    loadedVideoUrls.add(src);
+    prefetchVideo.src = "";
+    prefetchVideo.remove();
+    prefetchRunning = false;
+    processPrefetchQueue();
+  }, { once: true });
+  setTimeout(() => {
+    if (document.contains(prefetchVideo)) {
+      loadedVideoUrls.add(src);
+      prefetchVideo.src = "";
+      prefetchVideo.remove();
+    }
+    prefetchRunning = false;
+    processPrefetchQueue();
+  }, 30000);
+}
+
+// Collect all video srcs from the page for sequential prefetch after user clicks
+function enqueueAllVideosInOrder() {
+  const containers = document.querySelectorAll(".compare-grid-container, #videoGallery");
+  containers.forEach((container) => {
+    const videos = container.querySelectorAll(".grid-video-wrap");
+    videos.forEach((wrap) => {
+      const video = wrap.querySelector("video");
+      if (video && video.src) {
+        const resolved = video.src;
+        if (!loadedVideoUrls.has(resolved) && !videoPrefetchQueue.includes(resolved)) {
+          videoPrefetchQueue.push(resolved);
+        }
+      }
+    });
+  });
+  processPrefetchQueue();
+}
+
 // --- Video lazy loading with IntersectionObserver ---
 function createVideoElement(src, options = {}) {
   const resolved = resolveMediaSrc(src);
   const video = el("video", {
     src: resolved,
-    preload: "metadata",
+    preload: "auto",
     playsinline: "",
     "webkit-playsinline": "",
     muted: "",
@@ -86,7 +150,7 @@ function createVideoElement(src, options = {}) {
   return video;
 }
 
-function setupVideoEvents(video, btnPlay, wrapper) {
+function setupVideoEvents(video, btnPlay, wrapper, src) {
   const updateIcon = () => {
     if (video.paused) {
       btnPlay.classList.add("is-paused");
@@ -104,8 +168,14 @@ function setupVideoEvents(video, btnPlay, wrapper) {
   wrapper.addEventListener("click", () => {
     const willPlay = video.paused;
     allVideos.forEach((v) => { if (!v.paused) v.pause(); });
-    if (willPlay) video.play().catch(() => {});
-    else video.pause();
+    if (willPlay) {
+      video.play().catch(() => {});
+      // User clicked to play: prioritize this video, then prefetch all others in order
+      enqueueVideoPrefetch(src);
+      enqueueAllVideosInOrder();
+    } else {
+      video.pause();
+    }
   });
 }
 
@@ -125,10 +195,12 @@ function mediaNode(src, label, isSimple = false, options = {}) {
   const observer = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
       if (entry.isIntersecting) {
+        const resolved = resolveMediaSrc(src);
         const video = createVideoElement(src, options);
         wrapper.insertBefore(video, btnPlay);
         wrapper.classList.add("loaded");
         allVideos.push(video);
+        loadedVideoUrls.add(resolved);
 
         if (options.syncAspectRatio) {
           video.addEventListener("loadedmetadata", () => {
@@ -138,7 +210,7 @@ function mediaNode(src, label, isSimple = false, options = {}) {
           });
         }
 
-        setupVideoEvents(video, btnPlay, wrapper);
+        setupVideoEvents(video, btnPlay, wrapper, src);
         observer.unobserve(wrapper);
       }
     });
@@ -239,7 +311,7 @@ function imageNode(src, label, options = {}) {
   const img = el("img", {
     src: resolved,
     alt: label || "",
-    loading: "lazy",
+    loading: "eager",
   });
   const wrapper = el("div", { class: "grid-image-wrap" }, [img]);
   wrapper.title = label; // Tooltip

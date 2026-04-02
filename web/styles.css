@@ -19,6 +19,16 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 
+/* Prefetch container: hidden off-screen, used only for buffering */
+#video-prefetch-container {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;
+}
+
 body {
   margin: 0;
   font-family: ui-serif, Georgia, "Times New Roman", Times, serif;

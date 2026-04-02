@@ -9,10 +9,17 @@
       name="description"
       content="NingBGM project page: paper-style layout, anchored sections, video/audio comparison grid, and JSON-driven examples."
     />
-    <!-- Preconnect to GitHub Pages for faster video loading -->
+    <!-- Performance: Resource hints for faster loading -->
     <link rel="preconnect" href="https://ningbgm.github.io" crossorigin />
     <link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin />
     <link rel="dns-prefetch" href="https://ningbgm.github.io" />
+    <link rel="dns-prefetch" href="https://raw.githubusercontent.com" />
+    <!-- Preload critical CSS -->
+    <link rel="preload" href="./web/styles.css" as="style" />
+    <!-- Preload the JSON data file -->
+    <link rel="preload" href="./web/data/example_mp4.json" as="fetch" crossorigin />
+    <!-- Prefetch next page if available (for GitHub Pages navigation) -->
+    <link rel="prefetch" href="./web/app.js" />
     <link rel="stylesheet" href="./web/styles.css" />
     <style>
       /* 1. 标题与摘要区域居中对齐 */

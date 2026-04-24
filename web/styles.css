@@ -264,10 +264,10 @@ body {
 
 .h1 {
   margin: 0;
-  max-width: 15ch;
-  font-size: clamp(2.7rem, 3vw + 1.7rem, 4.15rem);
-  line-height: 1.01;
-  letter-spacing: -0.045em;
+  max-width: 100%;
+  font-size: clamp(1.05rem, 1.35vw, 1.2rem);
+  line-height: 1.12;
+  letter-spacing: -0.025em;
   text-wrap: balance;
 }
 
@@ -1249,9 +1249,9 @@ body {
   }
 
   .h1 {
-    max-width: 16ch;
-    font-size: clamp(2rem, 8vw, 2.9rem);
-    line-height: 1.06;
+    max-width: 100%;
+    font-size: clamp(1.45rem, 4.4vw, 2rem);
+    line-height: 1.12;
   }
 
   .hero-deck {
@@ -1482,8 +1482,8 @@ body {
   }
 
   .h1 {
-    font-size: clamp(1.7rem, 9vw, 2.25rem);
-    line-height: 1.08;
+    font-size: clamp(1.2rem, 5.4vw, 1.55rem);
+    line-height: 1.14;
   }
 
   .hero-deck {

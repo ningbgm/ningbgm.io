@@ -67,29 +67,120 @@
         <section class="a4-page" id="page-1" aria-label="Abstract and overview">
           <section class="hero">
             <div class="hero-left">
+              <div class="hero-kicker-row">
+                <span class="hero-kicker">Open-Source Research Demo</span>
+                <span class="hero-kicker hero-kicker-muted">GitHub Pages Showcase</span>
+              </div>
               <h1 class="h1">NingBGM: Video Background Music Generation via Holistic Scene Understanding with Multi-Agent Collaboration</h1>
+              <p class="hero-deck muted no-justify">
+                Project page, demo results, and open-source implementation for multimodal video background music generation with collaborative scene understanding.
+              </p>
+              <div class="hero-actions" aria-label="Project resources">
+                <a
+                  class="btn hero-primary-btn"
+                  href="https://github.com/ningbgm/NingBGM"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <span class="btn-icon github-mark" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                      <path
+                        fill="currentColor"
+                        d="M12 1.75a10.25 10.25 0 0 0-3.24 19.98c.51.09.69-.22.69-.49v-1.73c-2.81.61-3.4-1.2-3.4-1.2-.46-1.16-1.12-1.47-1.12-1.47-.92-.63.07-.62.07-.62 1.02.07 1.55 1.04 1.55 1.04.9 1.55 2.37 1.1 2.95.84.09-.66.35-1.1.64-1.35-2.24-.26-4.6-1.12-4.6-4.98 0-1.1.39-2 .04-2.7 0 0 .84-.27 2.75 1.03a9.57 9.57 0 0 1 5 0c1.91-1.3 2.75-1.03 2.75-1.03.39.7.39 1.6.39 2.7 0 3.87-2.36 4.72-4.61 4.98.36.31.68.93.68 1.87v2.78c0 .27.18.59.7.49A10.25 10.25 0 0 0 12 1.75Z"
+                      />
+                    </svg>
+                  </span>
+                  <span>View NingBGM Code</span>
+                </a>
+                <a class="btn hero-secondary-btn" href="#page-2">Explore Demo Results</a>
+              </div>
               <div class="abstract">
-                <div class="notice-title">Abstract</div>
+                <div class="abstract-header">
+                  <div class="notice-title">Abstract</div>
+                  <a
+                    class="abstract-chip"
+                    href="https://github.com/ningbgm/NingBGM"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <span class="btn-icon github-mark" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                        <path
+                          fill="currentColor"
+                          d="M12 1.75a10.25 10.25 0 0 0-3.24 19.98c.51.09.69-.22.69-.49v-1.73c-2.81.61-3.4-1.2-3.4-1.2-.46-1.16-1.12-1.47-1.12-1.47-.92-.63.07-.62.07-.62 1.02.07 1.55 1.04 1.55 1.04.9 1.55 2.37 1.1 2.95.84.09-.66.35-1.1.64-1.35-2.24-.26-4.6-1.12-4.6-4.98 0-1.1.39-2 .04-2.7 0 0 .84-.27 2.75 1.03a9.57 9.57 0 0 1 5 0c1.91-1.3 2.75-1.03 2.75-1.03.39.7.39 1.6.39 2.7 0 3.87-2.36 4.72-4.61 4.98.36.31.68.93.68 1.87v2.78c0 .27.18.59.7.49A10.25 10.25 0 0 0 12 1.75Z"
+                        />
+                      </svg>
+                    </span>
+                    <span>NingBGM Code</span>
+                  </a>
+                </div>
                 <p id="abstractText" class="muted abstract-copy">
                   Existing video-to-music generation methods primarily rely on single visual modality inputs, often failing to capture the rich multimodal information present in real-world scenarios. Consequently, the generated music frequently lacks semantic and emotional alignment with the scene. To address this, we propose NingBGM, a video background music generation framework based on multi-agent collaboration. This framework introduces a holistic scene representation that fuses multi-source information to model temporal dynamics, objects, semantics, emotions, and narrative logic, serving as a guiding input for music generation. NingBGM organizes agents into three specialized teams for requirements analysis, scene understanding, and music generation. Each team follows a collaborative mechanism of supervisor assignment, expert execution, and verifier validation to simulate professional creation workflows. Furthermore, a structured agent role definition and task design module allow general agents to rapidly transform into domain experts, translating high-level user intentions into executable micro-instructions. We also construct and open-source CSD-200, the first multimodal holistic scene test set for video-to-music tasks, which fills a gap in fine-grained evaluation benchmarks. Experiments demonstrate that NingBGM achieves superior performance compared to baselines across multiple key metrics, validating the effectiveness of the multi-agent collaborative paradigm. Ablation studies further confirm that constructing holistic scenes through multimodal fusion is crucial for enhancing audio-visual synchronization.
                 </p>
-                <button id="abstractToggle" class="btn small abstract-toggle" type="button" hidden>
-                  Read full abstract
-                </button>
+                <div class="abstract-actions">
+                  <button id="abstractToggle" class="btn small abstract-toggle" type="button" hidden>
+                    Read full abstract
+                  </button>
+                  <a class="btn small abstract-link-btn" href="#page-2">Jump to comparisons</a>
+                </div>
               </div>
             </div>
 
             <aside class="hero-right" aria-label="Quick links">
-              <div class="card">
-                <div class="card-title">Experiment (Demo)</div>
-                <ul class="toc">
-                  <li><a href="#page-2">Video comparison</a></li>
-                  <li><a href="#page-3">More results</a></li>
-                  <li><a href="#page-4">Disclaimer</a></li>
-                </ul>
+              <div class="card hero-panel">
+                <div class="resource-card">
+                  <div class="resource-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                      <path
+                        fill="currentColor"
+                        d="M12 1.75a10.25 10.25 0 0 0-3.24 19.98c.51.09.69-.22.69-.49v-1.73c-2.81.61-3.4-1.2-3.4-1.2-.46-1.16-1.12-1.47-1.12-1.47-.92-.63.07-.62.07-.62 1.02.07 1.55 1.04 1.55 1.04.9 1.55 2.37 1.1 2.95.84.09-.66.35-1.1.64-1.35-2.24-.26-4.6-1.12-4.6-4.98 0-1.1.39-2 .04-2.7 0 0 .84-.27 2.75 1.03a9.57 9.57 0 0 1 5 0c1.91-1.3 2.75-1.03 2.75-1.03.39.7.39 1.6.39 2.7 0 3.87-2.36 4.72-4.61 4.98.36.31.68.93.68 1.87v2.78c0 .27.18.59.7.49A10.25 10.25 0 0 0 12 1.75Z"
+                      />
+                    </svg>
+                  </div>
+                  <div class="resource-copy">
+                    <div class="resource-eyebrow">Open-source code</div>
+                    <div class="card-title resource-title">NingBGM</div>
+                    <p class="muted no-justify resource-summary">
+                      Browse the GitHub repository, implementation details, and project resources for the paper demo.
+                    </p>
+                  </div>
+                </div>
+                <a
+                  class="btn resource-btn"
+                  href="https://github.com/ningbgm/NingBGM"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <span class="btn-icon github-mark" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                      <path
+                        fill="currentColor"
+                        d="M12 1.75a10.25 10.25 0 0 0-3.24 19.98c.51.09.69-.22.69-.49v-1.73c-2.81.61-3.4-1.2-3.4-1.2-.46-1.16-1.12-1.47-1.12-1.47-.92-.63.07-.62.07-.62 1.02.07 1.55 1.04 1.55 1.04.9 1.55 2.37 1.1 2.95.84.09-.66.35-1.1.64-1.35-2.24-.26-4.6-1.12-4.6-4.98 0-1.1.39-2 .04-2.7 0 0 .84-.27 2.75 1.03a9.57 9.57 0 0 1 5 0c1.91-1.3 2.75-1.03 2.75-1.03.39.7.39 1.6.39 2.7 0 3.87-2.36 4.72-4.61 4.98.36.31.68.93.68 1.87v2.78c0 .27.18.59.7.49A10.25 10.25 0 0 0 12 1.75Z"
+                      />
+                    </svg>
+                  </span>
+                  <span>View Code on GitHub</span>
+                </a>
                 <div class="divider"></div>
-                <button id="reloadBtn" class="btn small" type="button">Reload</button>
-                <div id="status" class="status" role="status" aria-live="polite"></div>
+                <div class="hero-panel-label">Experiment (Demo)</div>
+                <nav class="hero-nav" aria-label="Experiment navigation">
+                  <a class="hero-nav-link" href="#page-2">
+                    <span>Video comparison</span>
+                    <span class="hero-nav-meta">Methods</span>
+                  </a>
+                  <a class="hero-nav-link" href="#page-3">
+                    <span>More results</span>
+                    <span class="hero-nav-meta">Gallery</span>
+                  </a>
+                  <a class="hero-nav-link" href="#page-4">
+                    <span>Disclaimer</span>
+                    <span class="hero-nav-meta">Notes</span>
+                  </a>
+                </nav>
+                <div class="hero-panel-footer">
+                  <button id="reloadBtn" class="btn small hero-reload-btn" type="button">Reload</button>
+                  <div id="status" class="status" role="status" aria-live="polite"></div>
+                </div>
               </div>
             </aside>
           </section>

@@ -81,8 +81,7 @@ body {
 }
 .brand-title { font-weight: 700; font-size: 18px; }
 .brand-subtitle { color: var(--text-muted); font-size: 13px; }
-.topnav a { margin-left: 15px; text-decoration: none; color: var(--text-main); font-size: 14px; }
-.topnav a:hover { color: var(--primary); }
+.topnav span { margin-left: 15px; color: var(--text-main); font-size: 14px; }
 
 .skip {
   position: absolute;
@@ -299,11 +298,6 @@ body {
   display: block;
 }
 
-.github-mark {
-  width: 18px;
-  height: 18px;
-}
-
 .hero-primary-btn,
 .resource-btn {
   gap: 10px;
@@ -513,14 +507,13 @@ body {
   color: var(--text-main);
   text-decoration: none;
   font-weight: 600;
-  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  cursor: default;
 }
 
 .hero-nav-link:hover {
-  transform: translateY(-1px);
-  border-color: rgba(74, 63, 53, 0.24);
-  background: #fffdf8;
-  box-shadow: 0 12px 24px rgba(44, 36, 25, 0.08);
+  border-color: rgba(74, 63, 53, 0.12);
+  background: rgba(255, 253, 248, 0.72);
+  box-shadow: none;
 }
 
 .hero-nav-meta {
@@ -1119,7 +1112,7 @@ body {
     gap: 8px;
   }
 
-  .topnav a {
+  .topnav span {
     font-size: 13px;
     margin-left: 10px;
   }
@@ -1210,7 +1203,7 @@ body {
     width: 100%;
   }
 
-  .topnav a {
+  .topnav span {
     margin-left: 0;
     font-size: 14px;
     padding: 4px 8px;
@@ -1509,7 +1502,7 @@ body {
     font-size: 11px;
   }
 
-  .topnav a {
+  .topnav span {
     font-size: 13px;
     padding: 3px 6px;
   }
@@ -1591,7 +1584,7 @@ body {
     min-width: 44px;
   }
 
-  .topnav a {
+  .topnav span {
     padding: 8px 12px;
   }
 
